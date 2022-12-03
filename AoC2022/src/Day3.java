@@ -33,7 +33,7 @@ public class Day3 {
 			totalII += triplePriority(lines.get(i-1), lines.get(i), lines.get(i+1));
 		}
 		
-		System.out.println("Day III");
+		System.out.println("2022 Day III");
 		System.out.println("Part I : " + totalI);
 		System.out.println("Part II: " + totalII);
 		sc.close();

@@ -21,7 +21,7 @@ public class Day2 {
 				totalII += getPointsPartII(currentGame);
 			}
 		}
-		System.out.println("Day II");
+		System.out.println("2022 Day II");
 		System.out.println("Part I Total Score WIN Strategy: " + totalI);
 		System.out.println("Part II Total Score ELF Strategy: " + totalII);
 		sc.close();

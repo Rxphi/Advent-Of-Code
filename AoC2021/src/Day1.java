@@ -31,8 +31,9 @@ public class Day1 {
 			}
 		}
 		
-		System.out.println("Part I : " + partI);
-		System.out.println("Part II : " + partII);
+		System.out.println("2021 Day I");
+		System.out.println("Part I " + partI);
+		System.out.println("Part II " + partII);
 	}
 
 }

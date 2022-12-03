@@ -1,7 +1,5 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +29,7 @@ public class Day1 {
 		Collections.sort(calories, Collections.reverseOrder());
 		//System.out.println(calories);
 		
-		System.out.println("Day I");
+		System.out.println("2022 Day I");
 		System.out.println("Part I Most Calories carried by one Elf: " + calories.get(0));
 		System.out.println("Part II Total Calories of the top three Elves: " + (calories.get(0)+calories.get(1)+calories.get(2)));
 		sc.close();
