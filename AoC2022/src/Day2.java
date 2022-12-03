@@ -1,0 +1,101 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+public class Day2 {
+
+	public static void main(String[] args) throws FileNotFoundException{
+		File inputFile = new File("./src/input2.txt");
+		Scanner sc = new Scanner(inputFile);
+		
+		int totalI = 0;
+		int totalII = 0;
+		String currentGame;
+		
+		while (sc.hasNextLine()) {
+			currentGame = sc.nextLine();
+			if (currentGame.isEmpty()) {
+				break;
+			} else {
+				totalI += getPointsPartI(currentGame);
+				totalII += getPointsPartII(currentGame);
+			}
+		}
+		System.out.println("Day II");
+		System.out.println("Part I Total Score WIN Strategy: " + totalI);
+		System.out.println("Part II Total Score ELF Strategy: " + totalII);
+		sc.close();
+	}
+	
+	public static int getPointsPartI(String game) {
+		char opponent = game.charAt(0);
+		char myChoice = game.charAt(2);
+		
+		int points = 0;
+		
+		if (myChoice == 'X') {
+			points  += 1;
+			if (opponent == 'A') {
+				points += 3;
+			} else if (opponent == 'B') {
+				;
+			} else {
+				points += 6;
+			}
+		} else if (myChoice == 'Y') {
+			points += 2;
+			if (opponent == 'A') {
+				points += 6;
+			} else if (opponent == 'B') {
+				points += 3;
+			} else {
+				;
+			}
+		} else if (myChoice == 'Z'){
+			points += 3;
+			if (opponent == 'A') {
+				;
+			} else if (opponent == 'B') {
+				points += 6;
+			} else {
+				points += 3;
+			}
+		}
+		return points;
+	}
+	
+	public static int getPointsPartII (String game) {
+		char opponent = game.charAt(0);
+		char myChoice = game.charAt(2);
+		
+		int points = 0;
+		
+		if (opponent == 'A') {
+			if (myChoice == 'X') {
+				points += 3;
+			} else if (myChoice == 'Y') {
+				points += 4;
+			} else if (myChoice == 'Z') {
+				points += 8;
+			}
+		} else if (opponent == 'B') {
+			if (myChoice == 'X') {
+				points += 1;
+			} else if (myChoice == 'Y') {
+				points += 5;
+			} else if (myChoice == 'Z') {
+				points += 9;
+			}
+		} else if (opponent == 'C') {
+			if (myChoice == 'X') {
+				points += 2;
+			} else if (myChoice == 'Y') {
+				points += 6;
+			} else if (myChoice == 'Z') {
+				points += 7;
+			}
+		}
+		return points;
+	}
+
+}

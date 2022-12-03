@@ -1,0 +1,55 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
+public class Day2 {
+
+	public static void main(String[] args) throws FileNotFoundException{
+		File inputFile = new File("/home/raphi/eclipse-workspace/AoC2022/input2.txt");
+		Scanner sc = new Scanner(inputFile);
+
+		
+		sc.close();
+	}
+	
+	public static int getPoints(String game) {
+		char opponent = game.charAt(0);
+		char myChoice = game.charAt(2);
+		
+		int points = 0;
+		
+		switch (myChoice) {
+			case 'X':
+				points  += 1;
+				switch (opponent) {
+					case 'A':
+						points += 3;
+					case 'B':
+						;
+					case 'C':
+						points += 6;
+				}
+			case 'Y':
+				points += 2;
+				switch (opponent) {
+				case 'A':
+					points += 3;
+				case 'B':
+					;
+				case 'C':
+					points += 6;
+				}
+			case 'Z':
+				points += 3;
+				switch (opponent) {
+				case 'A':
+					points += 3;
+				case 'B':
+					;
+				case 'C':
+					points += 6;
+				}
+		}
+	}
+
+}

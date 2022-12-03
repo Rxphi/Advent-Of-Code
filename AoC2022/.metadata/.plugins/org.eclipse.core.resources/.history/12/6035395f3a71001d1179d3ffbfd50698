@@ -1,0 +1,29 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.Scanner;
+
+public class Day1 {
+	public static void main(String[] args) throws FileNotFoundException {
+		// TODO Auto-generated method stub
+		File inputFile = new File("input.txt");
+		Scanner sc = new Scanner(inputFile);
+		int mostCal = 0;
+		int currentCal = 0;
+		while (sc.hasNextLine()) {
+			if (!sc.hasNextInt()) {
+				currentCal = 0;
+				sc.next();
+			}
+			while (sc.hasNextInt()) {
+				currentCal += sc.nextInt();
+			}
+			if (currentCal > mostCal) {
+				mostCal = currentCal;
+			}
+		}
+		sc.close();
+		System.out.println("Most Calories carried by one Elf: " + mostCal);
+	}
+}
