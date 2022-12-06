@@ -6,7 +6,7 @@ import java.io.FileNotFoundException;
 public class Day4 {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		File input = new File("./src/input4.txt");
+		File input = new File("./inputFiles/input4.txt");
 		Scanner sc = new Scanner(input);
 		
 		// get the random numbers from the first line of input

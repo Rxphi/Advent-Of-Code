@@ -7,7 +7,7 @@ public class Day1 {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		// TODO Auto-generated method stub
-		File input = new File("./src/input1.txt");
+		File input = new File("./inputFiles/input1.txt");
 		Scanner sc = new Scanner(input);
 		
 		ArrayList<Integer> nums = new ArrayList<Integer>();

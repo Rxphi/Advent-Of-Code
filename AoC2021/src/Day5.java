@@ -6,7 +6,7 @@ import java.util.ArrayList;
 public class Day5 {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		File input = new File("./src/input5.txt");
+		File input = new File("./inputFiles/input5.txt");
 		Scanner sc = new Scanner(input);
 		
 		ArrayList<Line> lines = new ArrayList<Line>();

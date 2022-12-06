@@ -5,7 +5,7 @@ import java.util.Scanner;
 public class Day2 {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		File input = new File ("./src/input2.txt");
+		File input = new File ("./inputFiles/input2.txt");
 		Scanner sc = new Scanner (input);
 		
 		Submarine submarineI = new Submarine();

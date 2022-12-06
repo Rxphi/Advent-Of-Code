@@ -6,7 +6,7 @@ import java.util.BitSet;
 public class Day3 {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		File input = new File("./src/input3.txt");
+		File input = new File("./inputFiles/input3.txt");
 		Scanner sc = new Scanner(input);
 		
 		
