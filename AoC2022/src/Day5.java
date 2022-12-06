@@ -2,7 +2,6 @@ import java.io.FileNotFoundException;
 import java.io.File;
 import java.util.Scanner;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 
 public class Day5 {
@@ -11,35 +10,45 @@ public class Day5 {
 		File input = new File("./src/input5.txt");
 		Scanner sc = new Scanner(input);
 		
-		Stacks craneStacks = new Stacks(9);
-		craneStacks.stacks.get(0).addAll(new ArrayList<String> (Arrays.asList("F", "R", "W")));
-		craneStacks.stacks.get(1).addAll(new ArrayList<String> (Arrays.asList("P", "W", "V", "D", "C", "M", "H", "T")));
-		craneStacks.stacks.get(2).addAll(new ArrayList<String> (Arrays.asList("L", "N", "Z", "M", "P")));
-		craneStacks.stacks.get(3).addAll(new ArrayList<String> (Arrays.asList("R", "H", "C", "J")));
-		craneStacks.stacks.get(4).addAll(new ArrayList<String> (Arrays.asList("B", "T", "Q", "H", "G", "P", "C")));
-		craneStacks.stacks.get(5).addAll(new ArrayList<String> (Arrays.asList("Z", "F", "L", "W", "C", "G")));
-		craneStacks.stacks.get(6).addAll(new ArrayList<String> (Arrays.asList("C", "G", "J", "Z", "Q", "L", "V", "W")));
-		craneStacks.stacks.get(7).addAll(new ArrayList<String> (Arrays.asList("C", "V", "T", "W", "F", "R", "N", "P")));
-		craneStacks.stacks.get(8).addAll(new ArrayList<String> (Arrays.asList("V", "S", "R", "G", "H", "W", "J")));
-
-		for (int i = 0; i < 10; i++) {
-			sc.nextLine();
+		// get the number of stacks
+		String line = "";
+		while(sc.hasNextLine() && (line = sc.nextLine()).charAt(1) != '1') {
+			continue;
 		}
+		int numOfStacks = line.split("   ").length;
 		
-		String line;
+		// create two stacks for the two parts
+		Stacks craneI = new Stacks(numOfStacks);
+		Stacks craneII = new Stacks(numOfStacks);
+		
+		// restart the scanner
+		sc = new Scanner(input);
+		
+		while (sc.hasNextLine() && (line = sc.nextLine()).charAt(1) != '1') {
+			for (int i = 0; i < numOfStacks; i++) {
+				String toAdd = line.substring(1+4*i, 2+4*i);
+				if (!toAdd.equals(" ")) {
+					craneI.stacks.get(i).addLast(toAdd);
+					craneII.stacks.get(i).addLast(toAdd);
+				}
+			}
+		}
+				
+		// skip empty line
+		sc.nextLine();
+		
+		// read the move instructions and execute them on both Stacks
 		while (sc.hasNextLine() && !(line = sc.nextLine()).isEmpty()) {
-			// part I
-			//craneStacks.moveI(line);
-			
-			// part II
-			craneStacks.moveII(line);
+			craneI.moveI(line);
+			craneII.moveII(line);
 		}
 		
-		//String partI = craneStacks.getTop();
-		String partII = craneStacks.getTop();
+		// get and print the solutions
+		String partI = craneI.getTop();
+		String partII = craneII.getTop();
 		
 		System.out.println("Day V");
-		//System.out.println("Part I " + partI);
+		System.out.println("Part I " + partI);
 		System.out.println("Part II " + partII);
 	}
 }
@@ -54,41 +63,45 @@ class Stacks {
 		}
 	}
 	
-	void moveI(String instruction) {
+	int[] readInstructions(String instruction) {
+		int[] out = new int[3]; // stores "amount", "from" and "to" value
 		String[] instructionList = instruction.split(" ");
-		int amount = Integer.parseInt(instructionList[1]);
-		int from = Integer.parseInt(instructionList[3]) - 1;
-		int to = Integer.parseInt(instructionList[5]) - 1;
-		
-		for (int i = 0; i < amount; i++) {
-			stacks.get(to).addFirst(stacks.get(from).removeFirst());
+		out[0] = Integer.parseInt(instructionList[1]); // amount
+		out[1] = Integer.parseInt(instructionList[3]) - 1; // from
+		out[2] = Integer.parseInt(instructionList[5]) - 1; // to
+		return out;
+	}
+	
+	void moveI(String instruction) {
+		int[] instructs = readInstructions(instruction);
+		for (int i = 0; i < instructs[0]; i++) {
+			stacks.get(instructs[2]).addFirst(stacks.get(instructs[1]).removeFirst());
 		}
 	}
 	
 	void moveII(String instruction) {
-		String[] instructionList = instruction.split(" ");
-		int amount = Integer.parseInt(instructionList[1]);
-		int from = Integer.parseInt(instructionList[3]) - 1;
-		int to = Integer.parseInt(instructionList[5]) - 1;
-		
-		LinkedList<String> toAdd = new LinkedList<String>();
-		
-		for (int i = 0; i < amount; i++) {
-			stacks.get(to).add(i, stacks.get(from).remove(0));
+		int[] instructs = readInstructions(instruction);
+		for (int i = 0; i < instructs[0]; i++) {
+			stacks.get(instructs[2]).add(i, stacks.get(instructs[1]).remove(0));
 		}
 	}
 	
 	String getTop() {
 		String out = "";
-		
-		for (LinkedList stack : stacks) {
+		for (LinkedList<String> stack : stacks) {
 			if (stack.size() < 1) {
 				continue;
 			} else {	
 				out += stack.getFirst();
 			}
 		}
-		
 		return out;
+	}
+	
+	// not needed
+	void printMe() {
+		for (int i = 1; i <= stacks.size(); i++) {
+			System.out.println(i + ": " + stacks.get(i-1));
+		}
 	}
 }
