@@ -43,7 +43,7 @@ public class Day15 {
 		
 		
 		int partI = myMap.partI();
-		int partII = myMap.partII();
+		long partII = myMap.partII();
 		
 		System.out.println("Day XV"); 
 		System.out.println("Part I: " + partI);
@@ -117,19 +117,17 @@ class SensorMap {
 		return out;
 	}
 	
-	int partII () {
+	long partII () {
 		for (int i = 0; i < height; i++) {
-			if (i % 10000 == 0) {
-				System.out.println(i);
-			}
-			for (int j = 0; j < width; j++) {
+			for (long j = 0; j < width; j++) {
+//				System.out.println("checking " + j + " " + i);
 				boolean detected = false;
 				int maxdelta = 0;
 				for (int k = 0; k < sensorxarr.size(); k++) {
 					int x = sensorxarr.get(k);
 					int y = sensoryarr.get(k);
 					int r = radiusarr.get(k);
-					int dist = manhattan(j, i, x, y);
+					int dist = manhattan((int) j, i, x, y);
 					if (dist <= r) {
 						maxdelta = r - dist;
 						detected = true;
@@ -146,22 +144,6 @@ class SensorMap {
 		return -1;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
