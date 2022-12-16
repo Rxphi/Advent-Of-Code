@@ -5,11 +5,14 @@ import java.io.File;
 public class Day16 {
 
 	public static void main(String[] args) throws FileNotFoundException{
-		File input = new File("./inputFiles/test.txt");
+		File input = new File("./inputFiles/input16.txt");
 		
 		Graph cave = new Graph(input);
 		
-		int partI = cave.partI();
+		int partI = cave.pressureRelease(cave.intToNode.get(cave.stringToInt.get("AA")), 0, new boolean[cave.n], 0, 0, 0);
+		
+		System.out.println("Day XVI");
+		System.out.println("Part I : " + partI);
 	}
 
 }
@@ -31,7 +34,7 @@ class Graph {
 			String[] lineSplit = line.split("[=; ]");
 			String label = lineSplit[1];
 			int flowRate = Integer.parseInt(lineSplit[5]);
-			Node newNode = new Node(label, flowRate);
+			Node newNode = new Node(i, label, flowRate);
 			stringToInt.put(label, i);
 			intToNode.put(i, newNode);
 			i++;
@@ -52,44 +55,106 @@ class Graph {
 				matrix[to][from] = 1;
 				intToNode.get(from).neighbors.add(to);
 			}
-			System.out.println(intToNode.get(from));
+			//System.out.println(intToNode.get(from));
 		}
+		//System.out.println("\nNumber of nodes n = " + n);
 		apsp = apsp();
 	}
 	
-	int partI() {
-		boolean visited[] = new boolean[n];
-		int totalFlowRate = 0;
-		int out = 0;
-		String currentLabel = "AA";
-		for (int t = 0; t <= 30; t++) {
+	int pressureRelease(Node current, int t, boolean visited[], int totalFlowRate, int out, int recursionDepth) {
+		for (int i = 0; i < recursionDepth; i++) {
+			System.out.print("  ");
+		}
+		System.out.println(current + ", t=" + t + ", total=" + out);
+		if (t > 30) {
+			return out - ((t-30) * (totalFlowRate-current.flowRate));
+		}
+		
+		ArrayList<Node> unvisited = new ArrayList<Node>();
+		for (int i = 0; i < n; i++) {
+			if (!visited[i]) {
+				unvisited.add(intToNode.get(i));
+			}
+		}
+		
+		if (unvisited.isEmpty()) {
+			return out + Math.min(0, (30-t)*totalFlowRate);
+		}
+		
+		unvisited.sort(new Comparator<Node>() {
+
+			@Override
+			public int compare(Node o1, Node o2) {
+				int d1 = apsp[current.index][o1.index];
+				int d2 = apsp[current.index][o2.index];
+				return -Integer.compare((30-t-d1)*o1.flowRate, (30-t-d2)*o2.flowRate);
+			}
+			
+		});
+		
+		int check = 3;
+		int toAdd = 0;
+		Node best = null;
+		for (int i = 0; i < Math.min(unvisited.size(), check); i++) {
+			Node candidate = unvisited.get(i);
+			boolean[] newvisited = Arrays.copyOf(visited, n);
+			newvisited[candidate.index] = true;
+			int d = apsp[current.index][candidate.index];
+			int currentval = pressureRelease(candidate, t+d+1, newvisited, totalFlowRate+candidate.flowRate, out+((d+1)*totalFlowRate), recursionDepth+1);
+			if (currentval > toAdd) {
+				toAdd = currentval;
+				best = candidate;
+			}
+		}
+		
+		for (int i = 0; i < recursionDepth; i++) {
+			System.out.print("  ");
+		}
+		System.out.println("Choose " + best);
+		
+		return toAdd;
+		
+		/*
+		while (t <= 30) {
 			int from = stringToInt.get(currentLabel);
 			visited[from] = true;
 			Node current = intToNode.get(from);
 			int maxval = Integer.MIN_VALUE;
-			int next = current;
+			Node next = current;
+			int dist = 0;
 			for (int node = 0; node < n; node++) {
 				if (visited[node]) {
 					continue;
 				}
 				Node neighNode = intToNode.get(node);
-				int dist = apsp[from][node];
-				int val = (30-t-dist) * neighNode.flowRate;
+				int d = apsp[from][node];
+				int val = (30-t-d) * neighNode.flowRate;
 				
 				if (val > maxval) {
 					maxval = val;
-					next = node;
+					next = neighNode;
+					dist = d;
 				}
 			}
-			
-			System.out.print("Move to " + next.label);
-			out += totalFlowRate * apsp[from][];
+			System.out.println("Move to valve " + next.label + " Distance: " + dist);
+			for (int k = 0; k < dist; k++) {
+				if (t >= 30) {
+					break;
+				} else {					
+					System.out.println("Minute " + t + " FlowRate: " + totalFlowRate + " Total: " + out);
+					out += totalFlowRate;
+					t++;
+				}
+			}
+			System.out.println("Minute " + t + " Open valve " + next.label + " FlowRate: " + totalFlowRate + " Total: " + out);
 			totalFlowRate += next.flowRate;
-			System.out.println(" " + totalFlowRate);
-			
-			currentLabel = next.label;
+			t++;
+			if (t <= 30) {
+				out += totalFlowRate;
+				currentLabel = next.label;
+			}
 		}
-		return out;
+		*/
 	}
 	
 	int[][] apsp() {
@@ -106,7 +171,6 @@ class Graph {
 				}
 			}
 		}
-		printMatrix(current);
 		// run floyd-warshall
 		for (int k = 0; k < n; k++) {
 			int[][] next = new int[n][n];
@@ -128,6 +192,8 @@ class Graph {
 			}
 			current = next;
 		}
+		System.out.println("\nAll Pairs Shortest Path:");
+		printMatrix(current);
 		return current;
 		
 	}
@@ -144,18 +210,20 @@ class Graph {
 }
 
 class Node {
+	int index;
 	String label;
 	ArrayList<Integer> neighbors;
 	int flowRate;
 	
-	Node (String label, int flowRate) {
+	Node (int index, String label, int flowRate) {
+		this.index = index;
 		this.label = label;
 		neighbors = new ArrayList<Integer>();
 		this.flowRate = flowRate;
 	}
 	
 	public String toString () {
-		return label + " " + flowRate + " " + neighbors;
+		return label;
 	}
 }
 
