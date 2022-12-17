@@ -9,10 +9,16 @@ public class Day16 {
 		
 		Graph cave = new Graph(input);
 		
-		int partI = cave.pressureRelease(cave.intToNode.get(cave.stringToInt.get("AA")), 0, new boolean[cave.n], 0, 0, 0);
+		Node startNode = cave.intToNode.get(cave.stringToInt.get("AA"));
+		int partI = 0;//cave.pressureReleaseI(startNode, 0, new boolean[cave.n], 0, 0, 0);
+		int partII = cave.pressureReleaseII(startNode, startNode, 0, new boolean[cave.n], 0, 0, "both", 0);
 		
 		System.out.println("Day XVI");
 		System.out.println("Part I : " + partI);
+		System.out.println("Part II : " + partII);
+		
+		// 2490 to high for partII
+		// 2225 and 2020 was wrong
 	}
 
 }
@@ -61,11 +67,11 @@ class Graph {
 		apsp = apsp();
 	}
 	
-	int pressureRelease(Node current, int t, boolean visited[], int totalFlowRate, int out, int recursionDepth) {
-		for (int i = 0; i < recursionDepth; i++) {
+	int pressureReleaseI(Node current, int t, boolean visited[], int totalFlowRate, int out, int recursionDepth) {
+		/*for (int i = 0; i < recursionDepth; i++) {
 			System.out.print("  ");
 		}
-		System.out.println(current + ", t=" + t + ", total=" + out);
+		System.out.println(current + ", t=" + t + ", total=" + out);*/
 		if (t > 30) {
 			return out - ((t-30) * (totalFlowRate-current.flowRate));
 		}
@@ -100,62 +106,131 @@ class Graph {
 			boolean[] newvisited = Arrays.copyOf(visited, n);
 			newvisited[candidate.index] = true;
 			int d = apsp[current.index][candidate.index];
-			int currentval = pressureRelease(candidate, t+d+1, newvisited, totalFlowRate+candidate.flowRate, out+((d+1)*totalFlowRate), recursionDepth+1);
+			int currentval = pressureReleaseI(candidate, t+d+1, newvisited, totalFlowRate+candidate.flowRate, out+((d+1)*totalFlowRate), recursionDepth+1);
 			if (currentval > toAdd) {
 				toAdd = currentval;
 				best = candidate;
 			}
 		}
-		
+		/*
 		for (int i = 0; i < recursionDepth; i++) {
 			System.out.print("  ");
 		}
 		System.out.println("Choose " + best);
-		
+		*/
 		return toAdd;
+	}
+	
+	int pressureReleaseII(Node current, Node elephant, int t, boolean visited[], int totalFlowRate, int out, String last, int recursionDepth) {
+		if (recursionDepth < 3) {
+			System.out.println(recursionDepth);
+		}
+		/*for (int i = 0; i < recursionDepth; i++) {
+			System.out.print("  ");
+		}
+		System.out.println(current + " " + elephant + ", t=" + t + ", total=" + out);*/
+		if (t > 26) {
+
+			return out - ((t-26) * (totalFlowRate-current.flowRate-elephant.flowRate));
+		}
 		
-		/*
-		while (t <= 30) {
-			int from = stringToInt.get(currentLabel);
-			visited[from] = true;
-			Node current = intToNode.get(from);
-			int maxval = Integer.MIN_VALUE;
-			Node next = current;
-			int dist = 0;
-			for (int node = 0; node < n; node++) {
-				if (visited[node]) {
-					continue;
-				}
-				Node neighNode = intToNode.get(node);
-				int d = apsp[from][node];
-				int val = (30-t-d) * neighNode.flowRate;
-				
-				if (val > maxval) {
-					maxval = val;
-					next = neighNode;
-					dist = d;
-				}
-			}
-			System.out.println("Move to valve " + next.label + " Distance: " + dist);
-			for (int k = 0; k < dist; k++) {
-				if (t >= 30) {
-					break;
-				} else {					
-					System.out.println("Minute " + t + " FlowRate: " + totalFlowRate + " Total: " + out);
-					out += totalFlowRate;
-					t++;
-				}
-			}
-			System.out.println("Minute " + t + " Open valve " + next.label + " FlowRate: " + totalFlowRate + " Total: " + out);
-			totalFlowRate += next.flowRate;
-			t++;
-			if (t <= 30) {
-				out += totalFlowRate;
-				currentLabel = next.label;
+		ArrayList<Node> unvisited = new ArrayList<Node>();
+		for (int i = 0; i < n; i++) {
+			if (!visited[i]) {
+				unvisited.add(intToNode.get(i));
 			}
 		}
-		*/
+		
+		if (unvisited.isEmpty()) {
+			return out + Math.min(0, (26-t)*totalFlowRate);
+		}
+		
+		unvisited.sort(new Comparator<Node>() {
+
+			@Override
+			public int compare(Node o1, Node o2) {
+				int d1 = apsp[current.index][o1.index];
+				int d2 = apsp[current.index][o2.index];
+				return -Integer.compare((26-t-d1)*o1.flowRate, (26-t-d2)*o2.flowRate);
+			}
+			
+		});
+	
+		int check = 3;
+		
+		ArrayList<Node> candidatesForCurrent = new ArrayList<Node>();
+		
+		for (int i = 0; i < Math.min(unvisited.size(), check); i++) {
+			candidatesForCurrent.add(unvisited.get(i));
+		}
+		
+		unvisited.sort(new Comparator<Node>() {
+
+			@Override
+			public int compare(Node o1, Node o2) {
+				int d1 = apsp[elephant.index][o1.index];
+				int d2 = apsp[elephant.index][o2.index];
+				return -Integer.compare((26-t-d1)*o1.flowRate, (26-t-d2)*o2.flowRate);
+			}
+			
+		});
+		
+		ArrayList<Node> candidatesForElephant = new ArrayList<Node>();
+		
+		for (int i = 0; i < Math.min(unvisited.size(), check); i++) {
+			candidatesForElephant.add(unvisited.get(i));
+		}
+		
+		
+		//System.out.println(candidatesForCurrent + " " + candidatesForElephant);
+		int toAdd = 0;
+		
+		for (int i = 0; i < candidatesForCurrent.size(); i++) {
+			Node nextcurrent = candidatesForCurrent.get(i);
+			for (int j = 0; j < candidatesForElephant.size(); j++) {
+				Node nextelephant = candidatesForElephant.get(j);
+				// vlt muss ich diesen Fall auch prüfen
+				if (nextcurrent.index == nextelephant.index) {
+					continue;
+				}
+				boolean[] newvisited = Arrays.copyOf(visited, n);
+
+				
+				int dcurr = apsp[current.index][nextcurrent.index];
+				int deleph = apsp[elephant.index][nextelephant.index];
+				
+				if (dcurr < deleph) {
+					Node fakeNext = nextelephant;
+					for (int k = 0; k < n; k++) {
+						if (apsp[elephant.index][k] == (deleph-dcurr-1)) {
+							fakeNext = intToNode.get(k);
+						}
+					}
+					newvisited[nextcurrent.index] = true;
+					int currentval = pressureReleaseII(nextcurrent, fakeNext, t+dcurr+1, newvisited, totalFlowRate+nextcurrent.flowRate, out+((dcurr+1)*totalFlowRate), "current", recursionDepth+1);
+					toAdd = currentval > toAdd ? currentval : toAdd;
+				} else if (dcurr > deleph) {
+					Node fakeNext = nextcurrent;
+					for (int k = 0; k < n; k++) {
+						if (apsp[current.index][k] == (dcurr-deleph-1)) {
+							fakeNext = intToNode.get(k);
+						}
+					}
+					newvisited[nextelephant.index] = true;
+					int currentval = pressureReleaseII(fakeNext, nextelephant, t+deleph+1, newvisited, totalFlowRate+nextelephant.flowRate, out+((deleph+1)*totalFlowRate), "elephant", recursionDepth+1);
+					toAdd = currentval > toAdd ? currentval : toAdd;
+				} else {
+					newvisited[nextcurrent.index] = true;
+					newvisited[nextelephant.index] = true;
+					int currentval = pressureReleaseII(nextcurrent, nextelephant, t+dcurr+1, newvisited, totalFlowRate+nextcurrent.flowRate+nextelephant.flowRate, out+((dcurr+1)*totalFlowRate), "both", recursionDepth+1);
+					toAdd = currentval > toAdd ? currentval : toAdd;
+				}
+			}
+		}
+		
+		return toAdd;
 	}
+	
 	
 	int[][] apsp() {
 		int n = matrix.length;
@@ -192,8 +267,10 @@ class Graph {
 			}
 			current = next;
 		}
+		/*
 		System.out.println("\nAll Pairs Shortest Path:");
 		printMatrix(current);
+		*/
 		return current;
 		
 	}
@@ -226,18 +303,6 @@ class Node {
 		return label;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
