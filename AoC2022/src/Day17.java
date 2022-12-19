@@ -8,8 +8,8 @@ public class Day17 {
 		File input = new File("./inputFiles/input17.txt");
 		
 		Chamber location = new Chamber(new Scanner(input));
-		int partI = location.partI();
-		long partII = 0;//location.partII();
+		int partI = 0;//location.partI();
+		long partII = location.partII();
 		
 		System.out.println("Day XVII");
 		System.out.println("Part I : " + partI);
@@ -184,7 +184,7 @@ class Chamber {
 		
 		Map<Integer, Integer> grid = new HashMap<Integer, Integer>(); // from row number to integer that represents this row (bits represent cells) 
 
-		long upTo = 2022;
+		long upTo = 10;
 		
 		for (long n = 0; n < upTo; n++) {
 			ArrayList<Integer> shape = intToBitMask.get(s);
@@ -195,18 +195,54 @@ class Chamber {
 			for (int k = 0; k < rowsToAdd; k++) {
 				grid.put(gridHeight + k, 0);
 			}
+			gridHeight += rowsToAdd;
 			
 			boolean falling = true;
 			while (falling) {
+				String jet = jets.get(j);
 				// push
-				
+				ArrayList<Integer> nextShape = new ArrayList<Integer>(shape);
+				boolean validpush = true;
+				if (jet.equals("<")) {
+					for (int i = 0; i < shape.size(); i++) {
+						int shaperow = shape.get(i) << 1;
+						int row = grid.get(y+i);
+						if (shaperow >= 128 || (shaperow & row) != 0) { // if it would crash into the left wall or an existing rock
+							validpush = false;
+							break;
+						} else {
+							nextShape.set(i, shaperow);
+						}
+					}
+				} else if (jet.equals(">")) {
+					for (int i = 0; i < shape.size(); i++) {
+						int shaperow = shape.get(i);
+						int row = grid.get(y+1);
+						if ((shaperow & 1) == 1) { // if it would crash into the right wall
+							validpush = false;
+							break;
+						}
+						shaperow >>= 1;
+						if ((shaperow & row) != 0) {
+							validpush = false;
+							break;
+						} else {
+							nextShape.set(i, shaperow);
+						}
+					}
+				}
+				if (validpush) {
+					shape = nextShape;
+				}
 				// fall
-				j = j+1 > jets.size() ? 0 : j+1;
+				j = j+1 == jets.size() ? 0 : j+1;
+				falling = false;
 			}
 			
 			
 			
 			s = (s+1) % 5;
+			System.out.println(toString(grid));
 		}
 		
 		return height;
@@ -226,7 +262,48 @@ class Chamber {
 		return out;
 	}
 	
-	public String toString(Map<Integer, Integer> grid, int gridHeight) {
-		return null;
+	public String toString(Map<Integer, Integer> grid) {
+		String out = "";
+		for (int i = grid.size()-1; i >= 0; i--) {
+			String row = Integer.toBinaryString(grid.get(i));
+			out += "|";
+			for (int j = 0; j < 7-row.length(); j++) {
+				out += "0";
+			}
+			for (int j = 0; j < row.length(); j++) {
+				out += row.substring(j, j+1);
+			}
+			out += "|" + System.lineSeparator();
+		}
+		out += "+-------+" + System.lineSeparator();
+		return out;
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
