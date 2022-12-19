@@ -18,9 +18,7 @@ public class Day19 {
 			partI += currentBP.index * maxGeodes;
 			break;
 		}
-
 	}
-
 }
 
 class Blueprint {
@@ -46,11 +44,11 @@ class Blueprint {
 	
 	int maxNumOfGeodes(int maxt) {
 		State start = new State(this, 0, maxt, 1, 0, 0, 0, 0, 0, 0, 0);
-		return start.finalState().openGeodes;
+		return 0;
 	}
 }
 
-class State {
+class State implements Comparable{
 	Blueprint bp;
 	int t;
 	int maxt;
@@ -77,40 +75,44 @@ class State {
 		this.obsidian = obsidian;
 	}
 	
-	public State finalState() {
-		if (t > maxt) {
-			return this;
+	public Set<State> advanceState(State s) {
+		if (s.t > s.maxt) {
+			return new HashSet<State>(Arrays.asList(s));
 		}
-		System.out.println("t: " + t + ", ore-robots: " + numOfOreRobots + ", clay-robots: " + numOfClayRobots + ", obsidian-robots: " + numOfObsidianRobots + ", geode-robots: " + numOfGeodeRobots + ", ore: " + ore + ", clay: " + clay + ", obsidian: " + obsidian + ", opened: " + openGeodes);
-		int nextNumOfOreRobots = numOfOreRobots;
-		int nextNumOfClayRobots = numOfClayRobots;
-		int nextNumOfObsidianRobots = numOfObsidianRobots;
-		int nextNumOfGeodeRobots = numOfGeodeRobots;
-		int nextOpenGeodes = openGeodes + numOfGeodeRobots;
-		int nextOre = ore + numOfOreRobots;
-		int nextClay = clay + numOfClayRobots;
-		int nextObsidian = obsidian + numOfObsidianRobots;
+		Set<State> out = new HashSet<State>();
+		System.out.println("t: " + s.t + ", ore-robots: " + s.numOfOreRobots + ", clay-robots: " + s.numOfClayRobots + ", obsidian-robots: " + s.numOfObsidianRobots + ", geode-robots: " + s.numOfGeodeRobots + ", ore: " + s.ore + ", clay: " + s.clay + ", obsidian: " + s.obsidian + ", opened: " + s.openGeodes);
+		int nextNumOfOreRobots = s.numOfOreRobots;
+		int nextNumOfClayRobots = s.numOfClayRobots;
+		int nextNumOfObsidianRobots = s.numOfObsidianRobots;
+		int nextNumOfGeodeRobots = s.numOfGeodeRobots;
+		int nextOpenGeodes = s.openGeodes + s.numOfGeodeRobots;
+		int nextOre = s.ore + s.numOfOreRobots;
+		int nextClay = s.clay + s.numOfClayRobots;
+		int nextObsidian = s.obsidian + s.numOfObsidianRobots;
 		
 		ArrayList<State> states = new ArrayList<State>();
 		
-		if (bp.geodeRobotOre <= ore && bp.geodeRobotObsidian <= obsidian) {
-			nextOre -= bp.geodeRobotOre;
-			nextObsidian -= bp.geodeRobotObsidian;
-			nextNumOfGeodeRobots++;
-			System.out.println(t + " build geode robot");
-		} else if (bp.obsidianRobotOre <= ore && bp.obsidianRobotClay <= clay) {
-			nextOre -= bp.obsidianRobotOre;
-			nextClay -= bp.obsidianRobotClay;
-			nextNumOfObsidianRobots++;
-			System.out.println(t + " build obsidian robot");
-		}if (bp.clayRobot <= ore) {
-			nextOre -= bp.clayRobot;
-			nextNumOfClayRobots++;
-			System.out.println(t + " build clay robot");
+		if (s.bp.geodeRobotOre <= s.ore && s.bp.geodeRobotObsidian <= s.obsidian) { // build geode robot
+			out.add(new State(s.bp, s.t+1, s.maxt, nextNumOfOreRobots, nextNumOfClayRobots, nextNumOfObsidianRobots, nextNumOfGeodeRobots+1, nextOpenGeodes, nextOre-s.bp.geodeRobotOre, nextClay, nextObsidian-s.bp.geodeRobotObsidian));
 		}
+		if (s.bp.obsidianRobotOre <= s.ore && s.bp.obsidianRobotClay <= s.clay) { // build obsidian robot
+			out.add(new State(s.bp, t+1, s.maxt, nextNumOfOreRobots, nextNumOfClayRobots, nextNumOfObsidianRobots+1, nextNumOfGeodeRobots, nextOpenGeodes, nextOre-s.bp.geodeRobotOre, nextClay-s.bp.obsidianRobotClay, nextObsidian));
+		}
+		if (s.bp.clayRobot <= s.ore) { // build clay robot
+			out.add(new State(s.bp, s.t+1, s.maxt, nextNumOfOreRobots, nextNumOfClayRobots+1, nextNumOfObsidianRobots, nextNumOfGeodeRobots, nextOpenGeodes, nextOre-s.bp.clayRobot, nextClay, nextObsidian));
+		}
+		if (s.bp.oreRobot <= s.ore) { // build ore robot
+			out.add(new State(s.bp, s.t+1, s.maxt, nextNumOfOreRobots+1, nextNumOfClayRobots, nextNumOfObsidianRobots, nextNumOfGeodeRobots, nextOpenGeodes, nextOre-s.bp.oreRobot, nextClay, nextObsidian));
+		}
+		// add the "do nothing" state
+		out.add(new State(s.bp, s.t+1, s.maxt, nextNumOfOreRobots, nextNumOfClayRobots, nextNumOfObsidianRobots, nextNumOfGeodeRobots, nextOpenGeodes, nextOre, nextClay, nextObsidian));
 		
-		State next = new State(bp, t+1, maxt, nextNumOfOreRobots, nextNumOfClayRobots, nextNumOfObsidianRobots, nextNumOfGeodeRobots, nextOpenGeodes, nextOre, nextClay, nextObsidian);
-		return next.finalState();
+		return out;
+	}
+
+	@Override
+	public int compareTo(Object o) {
+		return Integer.compare(this.openGeodes, ((State) o).openGeodes);
 	}
 }
 
