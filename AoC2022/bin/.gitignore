@@ -14,6 +14,7 @@
 /Day18.class
 /Day19.class
 /Day2.class
+/Day20.class
 /Day3.class
 /Day4.class
 /Day5.class
@@ -28,6 +29,8 @@
 /Graph.class
 /Grid.class
 /HeightMap.class
+/IntNode.class
+/LinkedList.class
 /Monkey.class
 /MonkeyGroup.class
 /Node.class
@@ -39,6 +42,4 @@
 /State.class
 /TreeNode.class
 /xyzPos.class
-/Day20.class
-/LinkedList.class
-/IntNode.class
+/Day21.class
