@@ -1,103 +1,125 @@
 import java.util.*;
+import java.util.stream.Collectors;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
 
 public class Day20 {
 
-	public static void main(String[] args)throws FileNotFoundException {
+	public static void main(String[] args) throws IOException {
 		File input = new File("./inputFiles/input20.txt");
-		Scanner sc = new Scanner(input);
 		
-		List<Integer> list = new LinkedList<Integer>();
-		while (sc.hasNextInt()) {
-			int x = sc.nextInt();
-			list.add(x);
-		}
-		int n = list.size();
-		// create arrays
-		int[] arr = new int[n];
-		for (int i = 0; i < n; i++) arr[i] = list.get(i);
-		int[] swapped = new int[n]; // 0 = false and 1 = true (didnt want to write new swapleft and swapright)
+		List<ListNode> nodes = Files.lines(input.toPath())
+			.map(l -> new ListNode(Integer.parseInt(l)))
+			.collect(Collectors.toList());
 		
-		for(int current : list) {
-			
-			int i = 0;
-			for(i = 0; i < n; i++) {
-				if (arr[i] == current && swapped[i] == 0) {
-					break;
-				}
-			}
-			int j = 0;
-			if (current < 0) {
-				for (j = 0; j > current; j--) {
-					swapleft(arr, i+j);
-					swapleft(swapped, i+j);
-				}
-			} else if (current > 0) {
-	
-				for (j = 0; j < current; j++) {
-					swapright(arr, i+j);
-					swapright(swapped, i+j);
-				}
-			}
-			swapped[Math.floorMod(i+j, n)] = 1;
-			/*for (int x : arr) {
-				System.out.print(x + " ");
-			}
-			System.out.println();*/
-		}
-				
-		int ind = 0;
-		for (ind = 0; ind < n; ind++) {
-			if (arr[ind] == 0) {
-				ind--;
-				break;
-			}
-		}
+		CircularLinkedList c = new CircularLinkedList(nodes);
 		
-
-
-		System.out.println(arr[(ind + 1001) % n]);
-		System.out.println(arr[(ind + 2001) % n]);
-		System.out.println(arr[(ind + 3001) % n]);
-		int partI =  arr[(ind + 1001) % n] + arr[(ind + 2001) % n] + arr[(ind + 3001) % n];
+		int partI = c.partI();
 		
 		System.out.println("Day XX");
 		System.out.println("Part I : " + partI);
-		
-	}
-	
-	public static void swapleft(int[] arr, int index) {
-		index = Math.floorMod(index, arr.length);
-		int temp = arr[index];
-		
-		if (index == 0) {
-			arr[0] = arr[arr.length-1];
-			arr[arr.length-1] = temp;
-		} else {
-			arr[index] = arr[index-1];
-			arr[index-1] = temp;
-		}
-	}
-	
-	public static void swapright(int[] arr, int index) {
-		index = Math.floorMod(index, arr.length);
-		
-		int temp = arr[index];
-		
-		if (index == arr.length-1) {
-			arr[arr.length-1] = arr[0];
-			arr[0] = temp;
-		} else {
-			arr[index] = arr[index+1];
-			arr[index+1] = temp;
-		}
 	}
 }
 
+class CircularLinkedList {
+	ListNode zero;
+	List<ListNode> nodes;
+	
+	CircularLinkedList (List<ListNode> list) {
+		nodes = list;
+		// Link the first and last node
+		ListNode first = list.get(0);
+		ListNode last = list.get(list.size()-1);
+		first.prev = last;
+		last.next = first;
+		// Link the other nodes in between
+		for (int i = 0; i < list.size()-1; i++) {
+			ListNode n1 = list.get(i);
+			ListNode n2 = list.get(i+1);
+			n1.next = n2;
+			n2.prev = n1;
+			if (n1.value == 0) { // look for node with value 0
+				zero = n1;
+			}
+		}
+		if (last.value == 0) { // look for node with value 0
+			zero = last;
+		}
+	}
+	
+	int partI() {
+		// do all the swapping 
+		for (ListNode n : nodes) {
+			n.swap(nodes.size());
+		}
+		
+		// get nodes at 1000th, 2000th and 3000th index after node with value 0 and add their value
+		int out = 0;
+		ListNode current = zero;
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 1000; j++) {
+				current = current.next;
+			}
+			out += current.value;
+		}
+		return out;
+	}
+	
+	@Override
+	public String toString() {
+		String out = "";
+		ListNode current = zero;
+		for (int i = 0; i < nodes.size(); i++) {
+			out += current.value + " ";
+			current = current.next;
+		}
+		return out;
+	}
+}
 
-
-
-
-
-
+class ListNode {
+	ListNode prev;
+	ListNode next;
+	int value;
+	
+	ListNode (int value) {
+		this.value = value;
+	}
+	
+	void swap (int listSize) {
+		if (value < 0) { // swap to the left
+			for (int i = value; i < 0; i++) {
+				// Before swap n1 <-> n2 <-> n3 <-> n4 (swapping n3)
+				ListNode n1 = this.prev.prev;
+				ListNode n2 = this.prev;
+				ListNode n3 = this;
+				ListNode n4 = this.next;
+				
+				n1.next = n3;
+				n2.next = n4;
+				n2.prev = n3;
+				n3.next = n2;
+				n3.prev = n1;
+				n4.prev = n2;
+				// After swap n1 <-> n3 <-> n2 <-> n4 (swapped n3 with n2)
+			}
+		} else if (value > 0) { // swap to the right
+			for (int i = 0; i < value; i++) {
+				// Before swap n1 <-> n2 <-> n3 <-> n4 (swapping n2)
+				ListNode n1 = this.prev;
+				ListNode n2 = this;
+				ListNode n3 = this.next;
+				ListNode n4 = this.next.next;
+				
+				n1.next = n3;
+				n2.next = n4;
+				n2.prev = n3;
+				n3.next = n2;
+				n3.prev = n1;
+				n4.prev = n2;
+				// After swap n1 <-> n3 <-> n2 <-> n4 (swapped n2 with n3)
+			}
+		}
+	}
+}
