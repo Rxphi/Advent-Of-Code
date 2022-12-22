@@ -9,7 +9,8 @@ public class Day22 {
 	public static void main(String[] args) throws IOException {
 		File input = new File("./inputFiles/test.txt");
 		Board forceField = new Board(input);
-		forceField.partI();
+		System.out.println(forceField);
+		//forceField.partI();
 	}
 
 }
@@ -56,7 +57,7 @@ class Board {
 		outerloop:
 		for (int i = 0; i < height; i++) {
 			for (int j = 0; j < width; j++) {
-				if (grid.get(i).get(j).equals(".")) {
+			if (grid.get(i).get(j).equals(".")) {
 					pos = new Pair(j, i);
 					break outerloop;
 				}
@@ -65,6 +66,16 @@ class Board {
 		
 		
 		return -1;
+	}
+	
+	@Override
+	public String toString() {
+		String out = "";
+		for (ArrayList<String> row : grid) {
+			// to do concatenate row to string
+			out += String.join("", row) + System.lineSeparator();
+		}
+		return out;
 	}
 }
 
