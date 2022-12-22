@@ -8,17 +8,28 @@ public class Day20 {
 
 	public static void main(String[] args) throws IOException {
 		File input = new File("./inputFiles/input20.txt");
+		long decriptionKey = 811589153;
 		
 		List<ListNode> nodes = Files.lines(input.toPath())
 			.map(l -> new ListNode(Integer.parseInt(l)))
 			.collect(Collectors.toList());
 		
 		CircularLinkedList c = new CircularLinkedList(nodes);
+		c.swap();
+		long partI = c.getResult();
 		
-		int partI = c.partI();
+		nodes.forEach(node -> node.value *= decriptionKey);
+						
+		c = new CircularLinkedList(nodes);
+		for (int i = 0; i < 10; i++) {
+			c.swap();
+		}
+		long partII = c.getResult();
+			
 		
 		System.out.println("Day XX");
 		System.out.println("Part I : " + partI);
+		System.out.println("Part II : " + partII);
 	}
 }
 
@@ -48,14 +59,16 @@ class CircularLinkedList {
 		}
 	}
 	
-	int partI() {
+	void swap() {
 		// do all the swapping 
 		for (ListNode n : nodes) {
 			n.swap(nodes.size());
 		}
-		
+	}
+	
+	long getResult() {
 		// get nodes at 1000th, 2000th and 3000th index after node with value 0 and add their value
-		int out = 0;
+		long out = 0;
 		ListNode current = zero;
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 1000; j++) {
@@ -70,7 +83,7 @@ class CircularLinkedList {
 	public String toString() {
 		String out = "";
 		ListNode current = zero;
-		for (int i = 0; i < nodes.size(); i++) {
+		for (long i = 0; i < nodes.size(); i++) {
 			out += current.value + " ";
 			current = current.next;
 		}
@@ -81,15 +94,15 @@ class CircularLinkedList {
 class ListNode {
 	ListNode prev;
 	ListNode next;
-	int value;
+	long value;
 	
-	ListNode (int value) {
+	ListNode (long value) {
 		this.value = value;
 	}
 	
-	void swap (int listSize) {
+	void swap (long listSize) {
 		if (value < 0) { // swap to the left
-			for (int i = value; i < 0; i++) {
+			for (long i = value % (listSize-1); i < 0; i++) {
 				// Before swap n1 <-> n2 <-> n3 <-> n4 (swapping n3)
 				ListNode n1 = this.prev.prev;
 				ListNode n2 = this.prev;
@@ -105,7 +118,7 @@ class ListNode {
 				// After swap n1 <-> n3 <-> n2 <-> n4 (swapped n3 with n2)
 			}
 		} else if (value > 0) { // swap to the right
-			for (int i = 0; i < value; i++) {
+			for (long i = 0; i < value % (listSize-1); i++) {
 				// Before swap n1 <-> n2 <-> n3 <-> n4 (swapping n2)
 				ListNode n1 = this.prev;
 				ListNode n2 = this;
