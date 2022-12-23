@@ -10,7 +10,9 @@ public class Day22 {
 		File input = new File("./inputFiles/test.txt");
 		Board forceField = new Board(input);
 		System.out.println(forceField);
-		forceField.partI();
+		//forceField.partI();
+		Pair n = forceField.next(new Pair(3, 7), 1);
+		System.out.println(n);
 	}
 
 }
@@ -74,22 +76,25 @@ class Board {
 		for (String move : path) {
 			if (move.equals("R")) {
 				System.out.println("Turn right");
-				currentDirection  = currentDirection == 3 ? 0 : currentDirection++;
-				grid.get(pos.i).set(pos.j, directionString.get(currentDirection));
+				currentDirection  = currentDirection == 3 ? 0 : currentDirection+1;
 				
 			} else if (move.equals("L")) {
 				System.out.println("Turn left");
-				currentDirection = currentDirection == 0 ? 3 : currentDirection--;
-				grid.get(pos.i).set(pos.j, directionString.get(currentDirection));
+				currentDirection = currentDirection == 0 ? 3 : currentDirection-1;
 				
 			} else { // move forward 
 				System.out.println("Move forward by " + move);
 				String sign = directionString.get(currentDirection);
+				grid.get(pos.i).set(pos.j, sign);
 				for (int i = 0; i < Integer.parseInt(move); i++) {
+					System.out.println(pos + " -> " + next(pos, currentDirection));
 					if (next(pos, currentDirection).equals(pos)) {
+						System.out.println("Equals");
 						break;
 					}
 					pos = next(pos, currentDirection);
+					grid.get(pos.i).set(pos.j, sign);
+					//System.out.println(pos);
 	
 				}
 			}
@@ -111,8 +116,10 @@ class Board {
 		} else if (grid.get(current.i).get(current.j).equals("#")) {
 			return prev;
 		} else {
-			while (grid.get(current.i).get(current.j).equals("")) {
+			while (grid.get(current.i).get(current.j).isEmpty()) {
 				current = current.add(toAdd);
+				current.j = Math.floorMod(current.j, width);
+				current.i = Math.floorMod(current.i, height);
 			}
 			if (grid.get(current.i).get(current.j).equals("#")) {
 				return prev;
@@ -148,7 +155,7 @@ class Pair {
 	}
 	
 	public boolean equals(Pair other) {
-		return j == other.j &&  i == other.i;
+		return j == other.j && i == other.i;
 	}
 
 	@Override
