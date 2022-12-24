@@ -7,12 +7,14 @@ import java.nio.file.Files;
 public class Day22 {
 
 	public static void main(String[] args) throws IOException {
-		File input = new File("./inputFiles/test.txt");
+		File input = new File("./inputFiles/input22.txt");
 		Board forceField = new Board(input);
+		
+		int partI = forceField.partI();
 		System.out.println(forceField);
-		//forceField.partI();
-		Pair n = forceField.next(new Pair(3, 7), 1);
-		System.out.println(n);
+		
+		System.out.println("Day XXII");
+		System.out.println("Part I : " + partI);
 	}
 
 }
@@ -31,7 +33,7 @@ class Board {
 		mapdirection.put(0, new Pair(1,0));
 		mapdirection.put(1, new Pair(0,1));
 		mapdirection.put(2, new Pair(-1,0));
-		mapdirection.put(3, new Pair(-1,0));
+		mapdirection.put(3, new Pair(0, -1));
 		directionString = new HashMap<Integer, String>();
 		directionString.put(0, ">");
 		directionString.put(1, "v");
@@ -55,12 +57,13 @@ class Board {
 		for (int h = 0; h < height; h++) {
 			List<String> row = grid.get(h);
 			while (row.size() < width) {
-				row.add("");
+				row.add(" ");
 			}			
 		}
 	}
 	
 	int partI() {
+		// find starting position
 		int currentDirection = 0;
 		Pair pos = null;
 		outerloop:
@@ -72,35 +75,36 @@ class Board {
 				}
 			}
 		}		
-		
+
+		// walk along the given directions
 		for (String move : path) {
 			if (move.equals("R")) {
-				System.out.println("Turn right");
+				//System.out.println("Turn right");
 				currentDirection  = currentDirection == 3 ? 0 : currentDirection+1;
 				
 			} else if (move.equals("L")) {
-				System.out.println("Turn left");
+				//System.out.println("Turn left");
 				currentDirection = currentDirection == 0 ? 3 : currentDirection-1;
 				
 			} else { // move forward 
-				System.out.println("Move forward by " + move);
+				//System.out.println("Move forward by " + move);
 				String sign = directionString.get(currentDirection);
 				grid.get(pos.i).set(pos.j, sign);
 				for (int i = 0; i < Integer.parseInt(move); i++) {
-					System.out.println(pos + " -> " + next(pos, currentDirection));
 					if (next(pos, currentDirection).equals(pos)) {
-						System.out.println("Equals");
 						break;
 					}
 					pos = next(pos, currentDirection);
-					grid.get(pos.i).set(pos.j, sign);
-					//System.out.println(pos);
-	
+					grid.get(pos.i).set(pos.j, sign);	
 				}
 			}
-			System.out.println(this);
+			// Print after the current instruction ends
+			// System.out.println(this);
 		}
-		return -1;
+		System.out.println("Row: " + (pos.i+1));
+		System.out.println("Column: " + (pos.j+1));
+		System.out.println("Facing: " + currentDirection);
+		return 1000 * (pos.i+1) + 4 * (pos.j+1) + currentDirection;
 	}
 	
 	Pair next(Pair pos, int dir) {
@@ -111,12 +115,12 @@ class Board {
 		current.j = Math.floorMod(current.j, width);
 		current.i = Math.floorMod(current.i, height);
 		
-		if (grid.get(current.i).get(current.j).equals(".")) {
+		if (!grid.get(current.i).get(current.j).equals(" ") && !grid.get(current.i).get(current.j).equals("#")) {
 			return current;
 		} else if (grid.get(current.i).get(current.j).equals("#")) {
 			return prev;
 		} else {
-			while (grid.get(current.i).get(current.j).isEmpty()) {
+			while (grid.get(current.i).get(current.j).equals(" ")) {
 				current = current.add(toAdd);
 				current.j = Math.floorMod(current.j, width);
 				current.i = Math.floorMod(current.i, height);
@@ -133,7 +137,6 @@ class Board {
 	public String toString() {
 		String out = "";
 		for (ArrayList<String> row : grid) {
-			// to do concatenate row to string
 			out += String.join("", row) + System.lineSeparator();
 		}
 		out += System.lineSeparator();
