@@ -7,7 +7,7 @@ import java.nio.file.Files;
 public class Day22 {
 
 	public static void main(String[] args) throws IOException {
-		File input = new File("./inputFiles/input22.txt");
+		File input = new File("./inputFiles/test.txt");
 		Board forceField = new Board(input);
 		
 		int partI = forceField.partI();
@@ -23,6 +23,7 @@ class Board {
 	int direction = 0;
 	Map<Integer, Pair> mapdirection;
 	Map<Integer, String> directionString;
+	Map<Pair, Pair> cubenext;
 	ArrayList<ArrayList<String>> grid;
 	ArrayList<String> path;
 	int height = 0;
@@ -30,10 +31,10 @@ class Board {
 	
 	Board(File input) throws IOException {
 		mapdirection = new HashMap<Integer, Pair>();
-		mapdirection.put(0, new Pair(1,0));
-		mapdirection.put(1, new Pair(0,1));
-		mapdirection.put(2, new Pair(-1,0));
-		mapdirection.put(3, new Pair(0, -1));
+		mapdirection.put(0, new Pair(1,0,0));
+		mapdirection.put(1, new Pair(0,1,1));
+		mapdirection.put(2, new Pair(-1,0,2));
+		mapdirection.put(3, new Pair(0,-1,3));
 		directionString = new HashMap<Integer, String>();
 		directionString.put(0, ">");
 		directionString.put(1, "v");
@@ -41,6 +42,7 @@ class Board {
 		directionString.put(3, "^");
 		grid = new ArrayList<ArrayList<String>>();
 		
+		// read input and construct grid
 		Files.lines(input.toPath())
 			.forEach(l -> {
 				if (l.isEmpty()) {
@@ -60,17 +62,37 @@ class Board {
 				row.add(" ");
 			}			
 		}
+		
+		// construct the map for part II
+		cubenext = new HashMap<Pair, Pair>();
+		
+		for (int j = 0; j < 50; j++) {
+			cubenext.put(new Pair(j, 199, 1), new Pair(100+j, 0, 1));
+			cubenext.put(new Pair(100+j, 0, 3), new Pair(j, 199, 3));
+		}
+		for (int i = 0; i < 50; i++) {
+			cubenext.put(new Pair(0, 150+i, 2), new Pair(50+i, 0, 1));
+			cubenext.put(new Pair(50+i, 0, 3), new Pair(0, 150+i, 0));
+		}
+		for (int i = 0; i < 50; i++) {
+			cubenext.put(new Pair(49, 150+i, 0), new Pair(50+i, 149, 3));
+			cubenext.put(new Pair(50+i, 149, 1), new Pair(49, 150+i, 2));
+		}
+		for (int i = 0; i < 50; i++) {
+			cubenext.put(new Pair(0, 100+i, 2), new Pair(50, 49-i, 0));
+			cubenext.put(new Pair(50, 49-i, 2), new Pair(0, 100+i, 0));
+		}
+		
 	}
 	
 	int partI() {
 		// find starting position
-		int currentDirection = 0;
 		Pair pos = null;
 		outerloop:
 		for (int i = 0; i < height; i++) {
 			for (int j = 0; j < width; j++) {
 			if (grid.get(i).get(j).equals(".")) {
-					pos = new Pair(j, i);
+					pos = new Pair(j, i, 0);
 					break outerloop;
 				}
 			}
@@ -80,21 +102,21 @@ class Board {
 		for (String move : path) {
 			if (move.equals("R")) {
 				//System.out.println("Turn right");
-				currentDirection  = currentDirection == 3 ? 0 : currentDirection+1;
+				pos.facing = pos.facing == 3 ? 0 : pos.facing+1;
 				
 			} else if (move.equals("L")) {
 				//System.out.println("Turn left");
-				currentDirection = currentDirection == 0 ? 3 : currentDirection-1;
+				pos.facing = pos.facing == 0 ? 3 : pos.facing-1;
 				
 			} else { // move forward 
 				//System.out.println("Move forward by " + move);
-				String sign = directionString.get(currentDirection);
+				String sign = directionString.get(pos.facing);
 				grid.get(pos.i).set(pos.j, sign);
 				for (int i = 0; i < Integer.parseInt(move); i++) {
-					if (next(pos, currentDirection).equals(pos)) {
+					if (next(pos).equalPos(pos)) {
 						break;
 					}
-					pos = next(pos, currentDirection);
+					pos = next(pos);
 					grid.get(pos.i).set(pos.j, sign);	
 				}
 			}
@@ -103,12 +125,12 @@ class Board {
 		}
 		System.out.println("Row: " + (pos.i+1));
 		System.out.println("Column: " + (pos.j+1));
-		System.out.println("Facing: " + currentDirection);
-		return 1000 * (pos.i+1) + 4 * (pos.j+1) + currentDirection;
+		System.out.println("Facing: " + pos.facing);
+		return 1000 * (pos.i+1) + 4 * (pos.j+1) + pos.facing;
 	}
 	
-	Pair next(Pair pos, int dir) {
-		Pair toAdd = mapdirection.get(dir);
+	Pair next(Pair pos) {
+		Pair toAdd = mapdirection.get(pos.facing);
 		Pair prev = pos;
 		Pair current = prev.add(toAdd);
 		
@@ -133,6 +155,10 @@ class Board {
 		
 	}
 	
+	Pair nextCube(Pair pos, int dir) {
+		return null;
+	}
+	
 	@Override
 	public String toString() {
 		String out = "";
@@ -147,18 +173,29 @@ class Board {
 class Pair {
 	int j;
 	int i;
+	int facing;
 	
 	Pair(int j, int i) {
 		this.j = j;
 		this.i = i;
 	}
 	
-	public Pair add(Pair other) {
-		return new Pair(j+other.j, i+other.i);
+	Pair(int j, int i, int facing) {
+		this.j = j;
+		this.i = i;
+		this.facing = facing;
 	}
 	
-	public boolean equals(Pair other) {
+	public Pair add(Pair other) {
+		return new Pair(j+other.j, i+other.i, other.facing);
+	}
+	
+	public boolean equalPos(Pair other) {
 		return j == other.j && i == other.i;
+	} 
+	
+	public boolean equals(Pair other) {
+		return j == other.j && i == other.i && facing == other.facing;
 	}
 
 	@Override
