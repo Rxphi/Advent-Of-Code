@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 static FILE *fp;
 
@@ -20,6 +21,7 @@ struct Game {
 };
 
 struct Draw *createDraw(int, int, int);
+int isDelimiter(char);
 
 struct Game games [100];
 int numOfGames = 0;
@@ -89,19 +91,19 @@ void readInput()
                 case 'r':
                     r = num;
                     del = line[i+3];
-                    newDraw = (del == ';') || (del == '\n') || (del == '\0')? 1 : 0;
+                    newDraw = isDelimiter(del) ? 1 : 0;
                     i += 5;
                     break;
                 case 'g':
                     g = num;
                     del = line[i+5];
-                    newDraw = (del == ';') || (del == '\n') || (del == '\0')? 1 : 0;
+                    newDraw = isDelimiter(del) ? 1 : 0;
                     i += 7;
                     break;
                 case 'b':
                     b = num;
                     del = line[i+4];
-                    newDraw = (del == ';') || (del == '\n') || (del == '\0')? 1 : 0;
+                    newDraw = isDelimiter(del) ? 1 : 0;
                     i += 6;
                     break;
                 }
