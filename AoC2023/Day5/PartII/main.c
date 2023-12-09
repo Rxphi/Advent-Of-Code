@@ -1,55 +1,194 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
-#define NUMS_IN_FIRST_LINE 2
-// #define NUMS_IN_FIRST_LINE 6
 #define NUM_OF_MAPS 7
-// N should be at least 2 + max(num of intervals remapped in a map)
-#define N 400
 
-#define M 100
+#define NUMS_ON_FIRST_LINE 20
+// #define NUMS_ON_FIRST_LINE 4
 
+#define LARGEST_MAP 100
 
-#define MAX (a, b) (a > b ? a : b)
+// global variables
+static FILE *fp;
+struct AllMaps allmaps; // stores the references to the 7 maps
+struct IntervalLL intervalLL; // Linked List of all Intervals that need to be processed
 
-// Structures
-struct Map {
-    long destinations[M];
-    long sources[M];
-    long lengths[M];
-    int numOfIntervals;
-};
-
-struct SeedInterval {
-    long start;
-    long end;
-    long length;
-};
-
-// Functions
+// functions
 void openFile();
 void readInput();
 void solvePartII();
-struct Map* createNewMap();
-struct SeedInterval* newSeedInterval(long, long);
-void process(struct Map*);
-void printInterval(struct SeedInterval *);
+struct Interval * createNewInterval(long, long);
+void enqueue(struct IntervalLL *, struct Interval *);
+struct Interval * pop(struct IntervalLL *);
+void printInterval(struct Interval *);
 
+// structs
+struct Interval {
+    // start and end are inclusive
+    long start;
+    long end;
+    long length;
+    struct Interval *next;
+};
 
-void printMap(struct Map *mapP);
-void printArr(long *, int);
-long min(long, long);
-long max(long, long);
+struct IntervalLL {
+    struct Interval *first;
+    struct Interval *last;
+    long numOfIntervals;
+};
 
-// Global variables
-struct Map *maps[NUM_OF_MAPS];
-long numOfSeedIntervals = NUMS_IN_FIRST_LINE / 2;
-struct SeedInterval *seedIntervals[N*N];
-struct SeedInterval *newIntervals[N*N];
+struct Map {
+    long numOfIntervalsMoved;
+    long *destinationStarts;
+    long *sourceRangeStarts;
+    long *rangeLengths;
+};
 
-static FILE *fp;
+struct AllMaps {
+    struct Map * maps[7];
+};
+
+void printInterval(struct Interval * interval) {
+    printf("Interval of length %ld [%ld, ..., %ld]\n", interval->length, interval->start, interval->end);
+}
+
+struct Interval * createNewInterval(long start, long length) {
+    struct Interval * newInterval = (struct Interval *) calloc(sizeof(struct Interval), 1);
+    newInterval->start = start;
+    newInterval->end = start + length - 1;
+    newInterval->length = length;
+    return newInterval;
+}
+
+struct Map * createNewMap() {
+    struct Map * newMap = (struct Map *) calloc(sizeof(struct Map), 1);
+    long dest, source, len;
+    dest = source = len = 0;
+    newMap->destinationStarts = (long *) calloc(sizeof(long), LARGEST_MAP);
+    newMap->sourceRangeStarts = (long *) calloc(sizeof(long), LARGEST_MAP);
+    newMap->rangeLengths = (long *) calloc(sizeof(long), LARGEST_MAP);
+    int ind = 0;
+    while(fscanf(fp, "%ld %ld %ld\n", &dest, &source, &len) == 3) {
+        newMap->destinationStarts[ind] = dest;
+        newMap->sourceRangeStarts[ind] = source;
+        newMap->rangeLengths[ind] = len;
+        ind++;
+        // printf("%ld %ld %ld\n", dest, source, len);
+    }
+    newMap->numOfIntervalsMoved = ind;
+    // printf("Created new map, size = %d!\n", ind);
+    return newMap;
+}
+
+struct Interval * pop(struct IntervalLL * ll) {
+    if (ll->numOfIntervals == 0) {
+        printf("Cannot pop Interval from empty IntervalLL!");
+        exit(1);
+    } 
+    struct Interval * output = ll->first;
+    ll->numOfIntervals--;
+    if (ll->numOfIntervals == 0) {
+        ll->first = NULL;
+        ll->last = NULL;
+    } else {
+        ll->first = output->next;
+    }
+    return output;
+}
+
+void enqueue(struct IntervalLL * ll, struct Interval * toAdd) {
+    if (ll->numOfIntervals == 0) {
+        ll->first = toAdd;
+        ll->last = toAdd;
+        ll->numOfIntervals++;
+        return;
+    }
+    ll->numOfIntervals++;
+    ll->last->next = toAdd;
+    ll->last = toAdd;
+}
+
+void applyMap(struct IntervalLL * ll, struct Map * map) {
+    int numToProcess = ll->numOfIntervals;
+
+    for (int i = 0; i < numToProcess; i++) {
+        struct Interval * interval = pop(ll);
+
+        struct IntervalLL * intervalsToProcess = (struct IntervalLL *) calloc(sizeof(struct IntervalLL), 1);
+
+        enqueue(intervalsToProcess, interval);
+
+        // printf("Processing: ");
+        while(intervalsToProcess->numOfIntervals > 0) {
+            struct Interval * toProcess = pop(intervalsToProcess);
+            // printInterval(toProcess);
+
+            long startInt = toProcess->start;
+            long endInt = toProcess->end;
+            long length = toProcess->length;
+
+            int mapped = 0;
+            // check if this interval gets mapped somewhere else
+            for (int j = 0; j < map->numOfIntervalsMoved; j++) {
+                long startMap = map->sourceRangeStarts[j];
+                long endMap = startMap + map->rangeLengths[j] - 1;
+
+                // Case 1. Map is to the left of the interval
+                if (endMap < startInt) {
+                    continue;
+                // Case 2. Map overlaps the left part of the interval
+                } else if (startMap <= startInt && startInt <= endMap && endMap < endInt) {
+                    long overlap = endMap - startInt + 1;
+                    enqueue(ll, createNewInterval(map->destinationStarts[j] + startInt - startMap, overlap));
+                    // printf("Case 2-> ");
+                    // printInterval(ll->last);
+                    enqueue(intervalsToProcess, createNewInterval(startInt+overlap, length-overlap));
+                    mapped = 1;
+                    break;
+                // Case 3. Map is entirely inside the interval
+                } else if (startInt < startMap && endMap < endInt) {
+                    enqueue(ll, createNewInterval(map->destinationStarts[j], map->rangeLengths[j]));
+                    // printf("Case 3-> ");
+                    // printInterval(ll->last);
+                    enqueue(intervalsToProcess, createNewInterval(startInt, startMap - startInt));
+                    enqueue(intervalsToProcess, createNewInterval(startMap + map->rangeLengths[j], endInt - endMap));
+                    mapped = 1;
+                    break;
+                // Case 4. Interval is entirely inside the map
+                } else if (startMap <= startInt && endInt <= endMap) {
+                    enqueue(ll, createNewInterval(map->destinationStarts[j] + startInt - startMap, length));
+                    // printf("Case 4-> ");
+                    // printInterval(ll->last);
+                    mapped = 1;
+                    break; 
+                // Case 5. Map overlaps with the right part of the interval
+                } else if (startInt < startMap && startMap <= endInt && endInt <= endMap) {
+                    long overlap = endInt - startMap + 1;
+                    enqueue(ll, createNewInterval(map->destinationStarts[j], overlap));
+                    // printf("Case 5 -> ");
+                    // printInterval(ll->last);
+                    enqueue(intervalsToProcess, createNewInterval(startInt, length - overlap));
+                    mapped = 1;
+                    break;
+                } else if (endInt < startMap) {
+                    continue;
+                } else {
+                    printf("Don't know where to put this interval!!!\n");
+                }
+            }
+
+            if (!mapped) {
+                // map to the same interval
+                enqueue(ll, toProcess);
+                // printf("Case Identity -> ");
+                // printInterval(ll->last);
+            } else {
+                free(toProcess);
+            }
+        }
+    }
+}
 
 int main() {
     openFile();
@@ -65,214 +204,55 @@ int main() {
 void openFile() {
     fp = fopen("../input.txt", "r");
 
-    if (fp == NULL)
-    {
+    if (fp == NULL) {
         perror("The file could not be opened!\n");
         exit(1);
-    }
-    else
-    {
+    } else {
         printf("Opened input file successfully!\n");
     }
 }
 
 void readInput() {
+    // read and create seed-intervals
     fscanf(fp, "seeds: ");
+    for (int i = 0; i < NUMS_ON_FIRST_LINE; i += 2) {
+        long start, length;
+        start = length = 0;
 
-    // read seed intervals in the first line
-    for (int i = 0; i < NUMS_IN_FIRST_LINE/2; i++) {
-        long start, len;
-        fscanf(fp, "%ld %ld", &start, &len);
-        seedIntervals[i] = newSeedInterval(start, len);
+        fscanf(fp, "%ld %ld", &start, &length);
+        struct Interval * newInterval = createNewInterval(start, length);
+        enqueue(&intervalLL, newInterval);
     }
+    fscanf(fp, "\n\n");
 
-    // read maps in the lines below
-    char mapName[50];
+    // read and create maps
+    char mapName[30];
     for (int i = 0; i < NUM_OF_MAPS; i++) {
         fscanf(fp, "%s map:\n", mapName);
-        maps[i] = createNewMap();
+        struct Map * newMap = createNewMap();
+        allmaps.maps[i] = newMap;
     }
 
     printf("Read input successfully!\n");
 }
 
 void solvePartII() {
-    long solutionII = LONG_MAX;
+    long solutionII = __LONG_MAX__;
 
-    printf("%ld\n", numOfSeedIntervals);
-
+    // apply all the maps to the intervals
     for (int i = 0; i < NUM_OF_MAPS; i++) {
-        process(maps[i]);
-        printf("%ld\n", numOfSeedIntervals);
+        printf("\nApplying map #%d\n", i+1);
+        applyMap(&intervalLL, allmaps.maps[i]);
     }
 
-    // get minimum
-    for (int i = 0; i < numOfSeedIntervals; i++) {
-        // printInterval(seedIntervals[i]);
-        if (seedIntervals[i]->start < solutionII) {
-            solutionII = seedIntervals[i]->start;
+    // get minimum start value of Interval in intervalLL
+    while (intervalLL.numOfIntervals > 0) {
+        struct Interval * curr = pop(&intervalLL);
+
+        if (curr->start < solutionII) {
+            solutionII = curr->start;
         }
     }
-    
-    printf("The solution to part II is: %ld\n", solutionII);
-}
 
-// changes the value of global variable "numOfSeedIntervals"
-void process(struct Map* map) {
-    int ind = 0;
-
-    for (int i = 0; i < numOfSeedIntervals; i++) {
-        struct SeedInterval* currInterval = seedIntervals[i];
-        long startInt = currInterval->start;
-        long endInt = currInterval->end;
-
-        for (int j = 0; j < map->numOfIntervals-1; j++) {
-            long startMap = map->sources[j];
-            long endMap = map->sources[j] + map->lengths[j] - 1;
-
-            if (endMap < startInt) {
-                continue;
-            } else if (endInt < startMap) {
-                break;
-            } else if (startMap <= startInt && endInt <= endMap) {
-                // move entire interval
-                newIntervals[ind++] = newSeedInterval(map->destinations[j] + (startInt - startMap), currInterval->length);
-                break;
-            } else if (startInt <= startMap && endMap <= endInt) {
-                // move entire map
-                newIntervals[ind++] = newSeedInterval(map->destinations[j], map->lengths[j]);
-            } else if (startMap <= startInt) {
-                // move left part of the interval
-                newIntervals[ind++] = newSeedInterval(map->destinations[j] + (startInt - startMap), endMap - startInt + 1);
-            } else if (endInt <= endMap) {
-                // move right part of the interval
-                newIntervals[ind++] = newSeedInterval(map->destinations[j], endInt - startMap + 1);
-            }
-        }
-
-        if (currInterval->start >= map->sources[map->numOfIntervals-1]) {
-            // create new interval
-            newIntervals[ind++] = newSeedInterval(currInterval->start, currInterval->length);
-        } else if (currInterval->end >= map->sources[map->numOfIntervals-1]) {
-            // create new interval
-            newIntervals[ind++] = newSeedInterval(map->sources[map->numOfIntervals-1], currInterval->end - map->sources[map->numOfIntervals-1] + 1);
-        }
-
-        free(currInterval);
-    }
-    numOfSeedIntervals = ind;
-    memcpy(seedIntervals, newIntervals, N*N*sizeof(struct SeedInterval *));
-}
-
-struct Map* createNewMap() {
-    printf("Creating new map\n");
-
-    struct Map *newmap = (struct  Map *) calloc(sizeof(struct Map), 1);
-    
-    int ind = 0;
-    long dest, source, len;
-
-    long unsortedDestinations[M];
-    long unsortedSources[M];
-    long unsortedLengths[M];
-
-    while (fscanf(fp, "%ld %ld %ld\n", &dest, &source, &len) == 3) {
-        // printf("%ld %ld %ld\n", dest, source, len);
-        unsortedDestinations[ind] = dest;
-        unsortedSources[ind] = source;
-        unsortedLengths[ind] = len;
-        ind++;
-    }
-
-    int numOfRemappingIntervals = ind;
-    int used[numOfRemappingIntervals];
-    for (int i = 0; i < numOfRemappingIntervals; i++) used[i] = 0;
-
-    long start = 0;
-    long nextStart = 0;
-
-    for (int i = 0; i < M; i++) {
-        nextStart = LONG_MAX;
-        int nextInd = -1;
-        for (int j = 0; j < numOfRemappingIntervals; j++) {
-            if (used[j]) {
-                continue;
-            } else if (unsortedSources[j] >= start && unsortedSources[j] < nextStart) {
-                nextInd = j;
-                nextStart = unsortedSources[j];
-            }
-        }
-
-        // printf("Start: %ld, NextStart: %ld, nextInd: %d\n", start, nextStart, nextInd);
-
-        if (nextInd == -1) {
-            // printf("fill rest\n");
-            int lastStart = newmap->sources[i-1] + newmap->lengths[i-1];
-            newmap->destinations[i] = lastStart;
-            newmap->sources[i] = lastStart;
-            newmap->lengths[i] = LONG_MAX;
-            newmap->numOfIntervals = i+1;
-            for (int j = i+1; j < M; j++) {
-                newmap->destinations[j] = -1;
-                newmap->sources[j] = -1;
-                newmap->lengths[j] = -1;
-            }
-            break;
-        }
-
-        if (start == unsortedSources[nextInd]) {
-            // printf("Perfect ind: %d\n", nextInd);
-            newmap->destinations[i] = unsortedDestinations[nextInd];
-            newmap->sources[i] = unsortedSources[nextInd];
-            newmap->lengths[i] = unsortedLengths[nextInd];
-            used[nextInd] = 1;
-        } else {
-            // printf("Insert identity\n");
-            newmap->destinations[i] = start;
-            newmap->sources[i] = start;
-            newmap->lengths[i] = nextStart-start;
-        }
-        start = newmap->sources[i] + newmap->lengths[i];
-    }
-
-    // printMap(newmap);
-    return newmap;
-}
-
-struct SeedInterval* newSeedInterval(long start, long len) {
-    //printf("Creating new seed interval with start: %ld, length: %ld\n", start, len);
-
-    struct SeedInterval* output = (struct SeedInterval*) malloc(sizeof(struct SeedInterval));
-    output->start = start;
-    output->end = start+len-1;
-    output->length = len;
-} 
-
-void printMap(struct Map *mapP) {
-    printf("Destinations: ");
-    printArr(mapP->destinations, M);
-    printf("Sources:      ");
-    printArr(mapP->sources, M);
-    printf("Lengths:      ");
-    printArr(mapP->lengths, M);
-    printf("#intervals = %d\n\n", mapP->numOfIntervals);
-}
-
-void printArr(long *arr, int len) {
-    for (int i = 0; i < len; i++) {
-        printf("%5ld ", arr[i]);
-    }
-    printf("\n");
-}
-
-void printInterval(struct SeedInterval *p) {
-    printf("[%ld <-> %ld]\n", p->start, p->end);
-}
-
-long min(long x, long y) {
-    return x < y ? x : y;
-}
-
-long max(long x, long y) {
-    return x > y ? x : y;
+    printf("\nThe solution to part II is: %ld\n", solutionII);
 }
