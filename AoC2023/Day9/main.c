@@ -87,7 +87,7 @@ long nextNum(long *line) {
         prediction += lastNum[i];
     }
 
-    // printf("Prediction = %ld\n", prediction);
+    // printf("Forwards Extrapolation = %ld\n", prediction);
     return prediction;
 }
 
@@ -116,9 +116,10 @@ long prevNum(long *line) {
 
     for (int i = n; i < NUM_PER_LINES; i++) {
         prediction = first[i] - prediction;
+        // printf("%ld ", prediction);
     }
-
-    // printf("Prediction = %ld\n", prediction);
+    // printf("\n");
+    printf("Backwards extrapolation: %ld\n", prediction);
     return prediction;
 }
 
@@ -133,7 +134,7 @@ int allZeros(long *check, int n) {
 
 void printArr(long *arr, int n) {
     for (int i = 0; i < n; i++) {
-        printf("%6ld ", arr[i]);
+        printf("%3ld ", arr[i]);
     }
     printf("\n");
 }
@@ -152,7 +153,7 @@ long solvePartI() {
 long solvePartII() {
     long solutionII = 0;
     for (int i = 0; i < LINES; i++) {
-        // printf("\nLooking at line #%d\n", i+1);
+        printf("\nLooking at line #%d\n", i+1);
         solutionII += prevNum(input[i]);
     }
     return solutionII;
