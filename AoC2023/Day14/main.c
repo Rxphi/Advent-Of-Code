@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define N 10
-#define N 100
+#define N 10
+//#define N 100
+
+#define PRINT 1
+#define PRINT_ROTATIONS 0
 
 char grid[N][N];
 static FILE *fp;
@@ -27,7 +30,7 @@ int main() {
 }
 
 void openFile() {
-    fp = fopen("input.txt", "r");
+    fp = fopen("test.txt", "r");
 
     if (fp == NULL) {
         perror("The file could not be opened!\n");
@@ -46,7 +49,6 @@ void readInput() {
             grid[i][j] = row[j];
         }
     }
-    // printGrid(&grid[0][0], N, N);
     printf("Read input successfully!\n");
 }
 
@@ -70,8 +72,8 @@ void tiltNorth() {
             }
         }
     }
-    // printf("===Tilted North===\n");
-    // printGrid(&grid[0][0], N, N);
+    printf("===Tilted North===\n");
+    printGrid(&grid[0][0], N, N);
 }
 
 void tiltWest() {
@@ -94,8 +96,8 @@ void tiltWest() {
             }
         }
     }
-    // printf("===Tilted West===\n");
-    // printGrid(&grid[0][0], N, N);
+    printf("===Tilted West===\n");
+    printGrid(&grid[0][0], N, N);
 }
 
 void tiltSouth() {
@@ -118,11 +120,12 @@ void tiltSouth() {
             }
         }
     }
-    // printf("===Tilted South===\n");
-    // printGrid(&grid[0][0], N, N);
+    printf("===Tilted South===\n");
+    printGrid(&grid[0][0], N, N);
 }
 
 void tiltEast() {
+    /*
     for (int i = 0; i < N; i++) {
         int free = -1;
         for (int j = N-1; j >= 0; j--) {
@@ -142,8 +145,29 @@ void tiltEast() {
             }
         }
     }
-    // printf("===Tilted East===\n");
-    // printGrid(&grid[0][0], N, N);
+    */
+    for (int i = 0; i < N; i++) {
+      int j = 0;
+      int roundedRocks = 0;
+      while (j < N) {
+        if (grid[i][j] == '#') {
+          for (int k = 0; k < roundedRocks; k++) {
+            grid[i][j-k-1] = 'O';  
+          }
+          roundedRocks = 0; 
+        } else if (grid[i][j] == 'O') {
+          grid[i][j] = '.';
+          roundedRocks++; 
+        } 
+        j++;
+      }
+      
+      for (int k = 0; k < roundedRocks; k++) {
+        grid[i][j-k-1] = 'O';  
+      }
+    }
+    printf("===Tilted East===\n");
+    printGrid(&grid[0][0], N, N);
 }
 
 void cycle() {
@@ -171,7 +195,7 @@ void solvePartI() {
     tiltNorth();
     solutionI = northSupportBeamLoad();
     
-    printGrid(&grid[0][0], N, N);
+    //printGrid(&grid[0][0], N, N);
     printf("The solution to part I is: %d\n", solutionI);
 }
 
@@ -180,18 +204,20 @@ void solvePartII() {
     tiltWest();
     tiltSouth();
     tiltEast();
-
-    // printf("After cycle 1:\n");
-    // printGrid(&grid[0][0], N, N);
-    for (int i = 0; i < 1000000000-1; i++) {
-    // for (int i = 0; i < 2; i++y) {
+    
+    /*
+    printf("After cycle 1:\n");
+    printGrid(&grid[0][0], N, N);
+    //for (int i = 0; i < 1000000000-1; i++) {
+    for (int i = 0; i < 2; i++) {
         cycle();
-        // printf("After cycle %d:\n", i+2);
-        // printGrid(&grid[0][0], N, N);
+        printf("After cycle %d:\n", i+2);
+        printGrid(&grid[0][0], N, N);
         if (i % 1000000 == 0) {
             printf("%d\n", i);
         }
     }
+    */
 
     solutionII = northSupportBeamLoad();
     printf("The solution to part II is: %d\n", solutionII);
