@@ -3,8 +3,8 @@
 #include <string.h>
 
 #define MAX_NUM_OF_CONNECTIONS 10
-// #define NUM_OF_MODULES 58
-#define NUM_OF_MODULES 5
+#define NUM_OF_MODULES 58
+//#define NUM_OF_MODULES 5
 
 #define BROADCAST_ID 20000
 
@@ -56,6 +56,7 @@ void printModule(struct Module *);
 struct Signal *createNewSignal(enum SignalType, int, int);
 void enqueueSignal(struct SignalQueue *, struct Signal *);
 enum SignalType processNextSignal(struct SignalQueue *);
+void printSignal(struct Signal *);
 
 int main()
 {
@@ -72,7 +73,7 @@ int main()
 
 void openFile()
 {
-    fp = fopen("test.txt", "r");
+    fp = fopen("input.txt", "r");
 
     if (fp == NULL)
     {
@@ -204,16 +205,22 @@ void enqueueSignal(struct SignalQueue *sq, struct Signal *s) {
     sq->size++;
 }
 
-enum SignalType processNextSignal(struct SignalQueue *sq) {
-    struct Signal *s = sq->head;
-    printSignal(s);
-    
-    if (sq->size == 1) {
-        sq->head = sq->tail = NULL;
-    } else {
-        sq->head = sq->head->next;
+struct Signal *popSignal(struct SignalQueue *sq) {
+    if (sq->size == 0) {
+        printf("Can't pop from empty queue!!!\n");
+        exit(1);
     }
-    sq->size--; 
+
+    struct Signal *s = sq->head;
+
+    sq->head = sq->head->next;
+    sq->size--;
+    return s;
+}
+
+enum SignalType processNextSignal(struct SignalQueue *sq) {
+    struct Signal *s = popSignal(sq);
+    //printSignal(s);
 
     // process
     struct Module * m = modules[s->receiver];
@@ -230,7 +237,7 @@ enum SignalType processNextSignal(struct SignalQueue *sq) {
         // update memory
         int allHigh = 1;
         for (int i = 0; i < m->numOfInputs; i++) {
-            if (s->receiver == m->inputs[i]) {
+            if (s->sender == m->inputs[i]) {
                 m->memory[i] = s->value;
             }
             allHigh = allHigh && (m->memory[i] == HIGH);
@@ -261,7 +268,7 @@ void solvePartI()
     long solutionI = 0;
     struct SignalQueue sq = {0};
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 1000; i++) {
         enqueueSignal(&sq, createNewSignal(LOW, -1, broadcaster->ind));
     }
 
