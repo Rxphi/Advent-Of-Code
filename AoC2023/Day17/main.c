@@ -40,6 +40,7 @@ void minHeapInsert(struct minheap *, struct Node *);
 void minHeapBubbleUp(struct minheap *, int);
 struct Node * minHeapPop(struct minheap *);
 void minHeapTrickleDown(struct minheap *, int);
+void printMinheap(struct minheap *);
 
 void minHeapInsert(struct minheap *h, struct Node *n) {
     h->nodes[h->size] = n;
@@ -226,7 +227,7 @@ int shortestPath(int starti, int startj, int startk) {
             int newk = dir * 3; 
             newk += dir == k / 3 ? k % 3 + 1 : 0;
 
-            if (i + di < 0 || i + di >= N || j + dj < 0 || j + dj >= N) {
+            if (i + di < 0 || i + di >= N || j + dj < 0 || j + dj >= N || visited[i+di][j+dj][newk]) {
                 continue;
             } else if (d + grid[i+di][j+dj] < dist[i+di][j+dj][newk]) {
                 int newd = d + grid[i+di][j+dj];
@@ -234,6 +235,7 @@ int shortestPath(int starti, int startj, int startk) {
                 minHeapInsert(&h, createNode(i+di, j+dj, newk, newd));
             }
         }
+        free(smallestNode);
     }
 
     int ans = INT_MAX;
@@ -260,7 +262,7 @@ void solvePartII()
     printf("The solution to part II is: %d\n", solutionII);
 }
 
-printMinheap(struct minheap *h) {
+void printMinheap(struct minheap *h) {
     printf("Size = %d; ", h->size);
     for (int i = 0; i < h->size; i++) {
         printf("(%d, %d, %d, %d) ", h->nodes[i]->i, h->nodes[i]->j, h->nodes[i]->k, h->nodes[i]->dist);
