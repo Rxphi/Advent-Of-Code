@@ -4,7 +4,7 @@
 
 #define MAX_NUM_OF_CONNECTIONS 10
 #define NUM_OF_MODULES 58
-//#define NUM_OF_MODULES 5
+// #define NUM_OF_MODULES 5
 
 #define BROADCAST_ID 20000
 
@@ -55,7 +55,7 @@ void solvePartII();
 void printModule(struct Module *);
 struct Signal *createNewSignal(enum SignalType, int, int);
 void enqueueSignal(struct SignalQueue *, struct Signal *);
-enum SignalType processNextSignal(struct SignalQueue *);
+struct Signal * processNextSignal(struct SignalQueue *);
 void printSignal(struct Signal *);
 
 int main()
@@ -214,15 +214,22 @@ struct Signal *popSignal(struct SignalQueue *sq) {
     struct Signal *s = sq->head;
 
     sq->head = sq->head->next;
+    if (sq->size == 1) {
+        sq->tail = NULL;
+    }
     sq->size--;
     return s;
 }
 
-enum SignalType processNextSignal(struct SignalQueue *sq) {
+struct Signal * processNextSignal(struct SignalQueue *sq) {
     struct Signal *s = popSignal(sq);
-    //printSignal(s);
+    // printSignal(s);
 
     // process
+    if (s->receiver < 0 || s->receiver >= NUM_OF_MODULES) {
+        return s;
+    }
+
     struct Module * m = modules[s->receiver];
     if (m->type == BROADCAST) {
         for (int i = 0; i < m->numOfOutputs; i++) {
@@ -249,9 +256,7 @@ enum SignalType processNextSignal(struct SignalQueue *sq) {
         }
     }
 
-    enum SignalType out = s->value;
-    free(s);
-    return out;
+    return s;
 }
 
 struct Signal *createNewSignal(enum SignalType value, int sender, int receiver) {
@@ -263,23 +268,28 @@ struct Signal *createNewSignal(enum SignalType value, int sender, int receiver) 
     return newSignal;
 }
 
+void pushButton(struct SignalQueue *sq) {
+    enqueueSignal(sq, createNewSignal(LOW, -1, broadcaster->ind));
+}
+
 void solvePartI()
 {
     long solutionI = 0;
+    long lowSignals = 0;
+    long highSignals = 0;
     struct SignalQueue sq = {0};
 
     for (int i = 0; i < 1000; i++) {
-        enqueueSignal(&sq, createNewSignal(LOW, -1, broadcaster->ind));
-    }
-
-    long lowSignals = 0;
-    long highSignals = 0;
-    while(sq.size > 0) {
-        enum SignalType t = processNextSignal(&sq);
-        if (t == LOW) {
-            lowSignals++;
-        } else {
-            highSignals++;
+        // printf("Button push #%d\n", i+1);
+        pushButton(&sq);
+        while(sq.size > 0) {
+            struct Signal *s = processNextSignal(&sq);
+            if (s->value == LOW) {
+                lowSignals++;
+            } else {
+                highSignals++;
+            }
+            free(s);
         }
     }
 
@@ -288,10 +298,15 @@ void solvePartI()
     printf("The solution to part I is: %ld\n", solutionI);
 }
 
+long firstLow(struct Module *m) {
+    return 0;
+}
+
 void solvePartII()
 {
-    int solutionII = 0;
-    printf("The solution to part II is: %d\n", solutionII);
+    long solutionII = 0;
+    
+    printf("The solution to part II is: %ld\n", solutionII);
 }
 
 void printModule(struct Module *m) {
@@ -323,5 +338,5 @@ void printModule(struct Module *m) {
 }
 
 void printSignal(struct Signal *s) {
-    printf("%d >>> %d %s\n", s->sender, s->receiver, s->value == LOW ? "LOW" : "HIGH");
+    printf("%d -%s> %d\n", s->sender, s->value == LOW ? "low" : "high", s->receiver);
 }
