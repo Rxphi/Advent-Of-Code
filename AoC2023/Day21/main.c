@@ -217,10 +217,11 @@ void solvePartII()
 
     // printGridAndVisited(&visited[0][0], N, N);
     fullGrid = ll.size;
+    long n = 2 * steps / N + 1;
+    long gridsEntered = n + 2 * (n * (n-1) / 2 - 2 * ((n/2) * (n/2+1) / 2));
+    solutionII = gridsEntered * fullGrid - (fullGrid - insideGrid); 
 
-    solutionII = (steps / N + 1) * (steps / N + 1) * fullGrid - (fullGrid - insideGrid); 
-
-    printf("steps/N = %ld, steps \% N = %ld, fullGrid = %ld, insideGrid = %ld\n", steps / N, steps % N, fullGrid, insideGrid);
+    printf("n = %ld, gridsEntered = %ld, fullGrid = %ld, insideGrid = %ld\n",n, gridsEntered , fullGrid, insideGrid);
     printf("The solution to part II is: %ld\n", solutionII);
 }
 
