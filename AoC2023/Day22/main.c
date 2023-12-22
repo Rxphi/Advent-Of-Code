@@ -1,9 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
-#define BRICKS 1258
-// #define BRICKS 7
+//#define BRICKS 1258
+#define BRICKS 7
+
+#define XLEN 10
+#define YLEN 10
+#define ZLEN 300
 
 enum Axis {
     X,
@@ -19,10 +24,11 @@ struct Brick {
     int y2;
     int z2;
     enum Axis axis;
+    int numOfSupports;
 };
 
 struct Brick bricks[BRICKS];
-int grid[10][10][300];
+int grid[XLEN][YLEN][ZLEN];
 static FILE *fp;
 
 void openFile();
@@ -46,7 +52,7 @@ int main()
 
 void openFile()
 {
-    fp = fopen("input.txt", "r");
+    fp = fopen("test.txt", "r");
 
     if (fp == NULL)
     {
@@ -76,34 +82,89 @@ void readInput()
     printf("Read input successfully!\n");
 }
 
+int rayCastDown(int startx, int starty, int startz, int maxh) {
+    int h = 0;
+    int z = startz-1;
+
+    while (z > 0 && !grid[startx][starty][z] && h < maxh) {
+        z--;
+        h++;
+    }
+
+    return h;
+}
+
 int fallHeight(struct Brick *b) {
     // TODO
-    int h = 0;
+    int h = INT_MAX;
     if (b->axis == Z) {
-        for (int z = b->z1-1; z >= 1; z--) {
-            if (grid[b->x1][b->y1][z]) {
-                break;
-            }
-            h++;
-        }
+        h = rayCastDown(b->x1, b->y1, b->z1, ZLEN);
     } else if (b->axis == Y) {
-
+        for (int y = b->y1; y <= b->y2; y++) {
+            int currh = rayCastDown(b->x1, y, b->z1, h);
+            h = currh < h ? currh : h;
+        }
     } else {
-
+        for (int x = b->x1; x <= b->x2; x++) {
+            int currh = rayCastDown(x, b->y1, b->z1, h);
+            h = currh < h ? currh : h;
+        }
     }
 
     return h;
 }
 
 void letFall(struct Brick *b, int amount) {
-    // TODO
-    if (b->axis == Z) {
-
-    } else if (b->axis == Y) {
-        
-    } else {
-
+    for (int x = b->x1; x <= b->x2; x++) {
+        for (int y = b->y1; y <= b->y2; y++) {
+            for (int z = b->z1; z <= b->z2; z++) {
+                grid[x][y][z] = 0;
+            }
+        }
     }
+
+    b->z1 -= amount;
+    b->z2 -= amount;
+
+    for (int x = b->x1; x <= b->x2; x++) {
+        for (int y = b->y1; y <= b->y2; y++) {
+            for (int z = b->z1; z <= b->z2; z++) {
+                grid[x][y][z] = 1;
+            }
+        }
+    }
+}
+
+// returns true if b2 is a support of b1
+int isSupport(struct Brick *b1, struct Brick *b2) {
+    return b2->z2 + 1 == b1->z1 && !(b1->x2 < b2->x1 || b2->x2 < b1->x1) && !(b1->y2 < b2->y1 || b2->y2 < b1->y1);
+}
+
+void numOfSupports(struct Brick *b1) {
+    if (b1->z1 == 1) {
+        b1->numOfSupports = INT_MAX;
+        return;
+    }
+
+    int n = 0;
+    for (int i = 0; i < BRICKS; i++) {
+        struct Brick *b2 = &bricks[i];
+
+        if (isSupport(b1, b2)) {
+            n++;
+        }
+    }
+    b1->numOfSupports = n;
+}
+
+int safeToDisintegrate(struct Brick *b1) {
+    for (int i = 0; i < BRICKS; i++) {
+        struct Brick *b2 = &bricks[i];
+        if (isSupport(b2, b1) && b2->numOfSupports == 1) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 void solvePartI()
@@ -122,8 +183,20 @@ void solvePartI()
         }
     }
 
-    // TODO
-    // determine the number of blocks that can be disintegrated
+    // calculate numOfSupports for every brick
+    for (int i = 0; i < BRICKS; i++) {
+        numOfSupports(&bricks[i]);
+        printBrick(&bricks[i]);
+    }
+
+    // find the bricks that are safe to disintegrate
+    for (int i = 0; i < BRICKS; i++) {
+        if (safeToDisintegrate(&bricks[i])) {
+            printf("Brick #%d is safe to disintegrate!\n", i+1);
+            solutionI++;
+        }
+    }
+
     printf("The solution to part I is: %d\n", solutionI);
 }
 
@@ -134,7 +207,7 @@ void solvePartII()
 }
 
 void printBrick(struct Brick *b) {
-    printf("%1d,%1d,%d~%1d,%1d,%d", b->x1, b->y1, b->z1, b->x2, b->y2, b->z2);
+    printf("%1d,%1d,%d~%1d,%1d,%d %d", b->x1, b->y1, b->z1, b->x2, b->y2, b->z2, b->numOfSupports);
     switch (b->axis)
     {
         case X:
