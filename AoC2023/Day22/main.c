@@ -3,8 +3,8 @@
 #include <string.h>
 #include <limits.h>
 
-//#define BRICKS 1258
-#define BRICKS 7
+#define BRICKS 1258
+// #define BRICKS 7
 
 #define XLEN 10
 #define YLEN 10
@@ -29,6 +29,8 @@ struct Brick {
 
 struct Brick bricks[BRICKS];
 int grid[XLEN][YLEN][ZLEN];
+int supportMatrix[BRICKS][BRICKS];
+
 static FILE *fp;
 
 void openFile();
@@ -52,7 +54,7 @@ int main()
 
 void openFile()
 {
-    fp = fopen("test.txt", "r");
+    fp = fopen("input.txt", "r");
 
     if (fp == NULL)
     {
@@ -73,11 +75,18 @@ void readInput()
             bricks[i].axis = X;
         } else if (bricks[i].y1 != bricks[i].y2) {
             bricks[i].axis = Y;
-        } else if (bricks[i].z1 != bricks[i].z2) {
+        } else {
             bricks[i].axis = Z;
         }
-
-        printBrick(&bricks[i]);
+        
+        for (int x = bricks[i].x1; x <= bricks[i].x2; x++) {
+            for (int y = bricks[i].y1; y <= bricks[i].y2; y++) {
+                for (int z = bricks[i].z1; z <= bricks[i].z2; z++) {
+                    grid[x][y][z] = 1;
+                }
+            }      
+        }
+        // printBrick(&bricks[i]);
     }
     printf("Read input successfully!\n");
 }
@@ -135,9 +144,9 @@ void letFall(struct Brick *b, int amount) {
     }
 }
 
-// returns true if b2 is a support of b1
-int isSupport(struct Brick *b1, struct Brick *b2) {
-    return b2->z2 + 1 == b1->z1 && !(b1->x2 < b2->x1 || b2->x2 < b1->x1) && !(b1->y2 < b2->y1 || b2->y2 < b1->y1);
+// returns true if the lower brick is a direct support of the higher brick
+int isSupport(struct Brick *lower, struct Brick *higher) {
+    return lower->z2 + 1 == higher->z1 && !(lower->x2 < higher->x1 || higher->x2 < lower->x1) && !(lower->y2 < higher->y1 || higher->y2 < lower->y1);
 }
 
 void numOfSupports(struct Brick *b1) {
@@ -150,7 +159,7 @@ void numOfSupports(struct Brick *b1) {
     for (int i = 0; i < BRICKS; i++) {
         struct Brick *b2 = &bricks[i];
 
-        if (isSupport(b1, b2)) {
+        if (isSupport(b2, b1)) {
             n++;
         }
     }
@@ -160,7 +169,7 @@ void numOfSupports(struct Brick *b1) {
 int safeToDisintegrate(struct Brick *b1) {
     for (int i = 0; i < BRICKS; i++) {
         struct Brick *b2 = &bricks[i];
-        if (isSupport(b2, b1) && b2->numOfSupports == 1) {
+        if (isSupport(b1, b2) && b2->numOfSupports == 1) {
             return 0;
         }
     }
@@ -171,6 +180,7 @@ void solvePartI()
 {
     int solutionI = 0;
 
+    // let all bricks fall down
     int bricksAreFalling = 1;
     while (bricksAreFalling) {
         bricksAreFalling = 0;
@@ -178,6 +188,7 @@ void solvePartI()
             int h = fallHeight(&bricks[i]);
             if (h > 0) {
                 bricksAreFalling = 1;
+                // printf("Brick #%d is falling %d units down\n", i+1, h);
                 letFall(&bricks[i], h);
             }
         }
@@ -186,13 +197,13 @@ void solvePartI()
     // calculate numOfSupports for every brick
     for (int i = 0; i < BRICKS; i++) {
         numOfSupports(&bricks[i]);
-        printBrick(&bricks[i]);
+        // printBrick(&bricks[i]);
     }
 
     // find the bricks that are safe to disintegrate
     for (int i = 0; i < BRICKS; i++) {
         if (safeToDisintegrate(&bricks[i])) {
-            printf("Brick #%d is safe to disintegrate!\n", i+1);
+            // printf("Brick #%d is safe to disintegrate!\n", i+1);
             solutionI++;
         }
     }
@@ -200,10 +211,73 @@ void solvePartI()
     printf("The solution to part I is: %d\n", solutionI);
 }
 
+// BFS style algorithm to find the number of bricks that will fall if this brick is desintegrated
+int fallNumber(int brick) {
+    int n = 0;
+    
+    int falling[BRICKS];
+    int visiting[BRICKS]; // current frontier of the BFS
+    for (int i = 0; i < BRICKS; i++) {
+        visiting[i] = 0;
+        falling[i] = 0;
+    }
+    falling[brick] = 1;
+    visiting[brick] = 1;
+
+    int stillVisiting = 1;
+    
+    while (stillVisiting) {
+        stillVisiting = 0;
+        int nextVisiting[BRICKS]; // next frontier of the BFS
+        for (int i = 0; i < BRICKS; i++) {
+            nextVisiting[i] = 0;
+        }
+        for (int i = 0; i < BRICKS; i++) {
+            if (!visiting[i]) {
+                continue;
+            }
+            for (int j = 0; j < BRICKS; j++) {
+                if (!supportMatrix[i][j] || nextVisiting[j]) {
+                    continue;
+                }
+                int willFall = 1;
+                for (int k = 0; k < BRICKS; k++) {
+                    if (!falling[k] && supportMatrix[k][j]) {
+                        willFall = 0;
+                        break;
+                    }
+                }
+                if (willFall) {
+                    nextVisiting[j] = 1;
+                    falling[j] = 1;
+                    stillVisiting = 1;
+                    n++;
+                }
+            }
+        }
+        memcpy(visiting, nextVisiting, sizeof(int) * BRICKS);
+    }
+
+    return n;
+}
+
 void solvePartII()
 {
-    int solutionII = 0;
-    printf("The solution to part II is: %d\n", solutionII);
+    long solutionII = 0;
+
+    for (int i = 0; i < BRICKS; i++) {
+        for (int j = 0; j < BRICKS; j++) {
+            supportMatrix[i][j] = isSupport(&bricks[i], &bricks[j]);
+        }
+    }
+
+    for (int i = 0; i < BRICKS; i++) {
+        int f = fallNumber(i);
+        solutionII += f;
+        // printf("FallNumber #%d: %d\n", i+1, f);
+    }
+
+    printf("The solution to part II is: %ld\n", solutionII);
 }
 
 void printBrick(struct Brick *b) {
