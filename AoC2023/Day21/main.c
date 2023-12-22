@@ -125,16 +125,13 @@ void reset2dArray(int *arr, int rows, int cols) {
     }
 }
 
-void solvePartI()
-{
-    int solutionI = 0;
-
+int visitGrid(int starti, int startj, int numOfSteps) {
     struct PositionLL ll = {0};
     insertPosition(&ll, createNewPosition(starti, startj));
 
     int visited[N][N];
 
-    for (int step = 0; step < 64; step++) {
+    for (int step = 0; step < numOfSteps; step++) {
         reset2dArray(&visited[0][0], N, N);
         int nodesToProcess = ll.size;
 
@@ -160,11 +157,17 @@ void solvePartI()
             }
             free(p);
         }
-
-        // printGridAndVisited(&visited[0][0], N, N);
     }
 
-    solutionI = ll.size;
+    // printGridAndVisited(&visited[0][0], N, N);
+    // printf("\n");
+    
+    return ll.size;
+}
+
+void solvePartI()
+{
+    int solutionI = visitGrid(N/2, N/2, 64);
 
     printf("The solution to part I is: %d\n", solutionI);
 }
@@ -178,57 +181,48 @@ void solvePartII()
 
     int visited[N][N];
 
-    long fullGrid;
-    long insideGrid;
+    long fullGridOdd = visitGrid(N/2, N/2, N);
+    long fullGridEven = visitGrid(N/2, N/2, N+1);
 
-    // Zum Glück gilt steps % N == N-1 / 2
-    for (int step = 0; step < N; step++) {
-        reset2dArray(&visited[0][0], N, N);
-        int nodesToProcess = ll.size;
-        
+    long farTop = visitGrid(N-1, N/2, N-1);
+    long farBottom = visitGrid(0, N/2, N-1);
+    long farLeft = visitGrid(N/2, N-1, N-1);
+    long farRight = visitGrid(N/2, 0, N-1);
 
-        for (int k = 0; k < nodesToProcess; k++) {
-            struct Position *p = popPosition(&ll);
-            int i = p->i;
-            int j = p->j;
+    long smallFarTopRight = visitGrid(N-1, 0, N - N/2 - 2);
+    long bigFarTopRight = visitGrid(N-1, 0, 2*N - N/2 - 2);
 
-            for (int di = -1; di <= 1; di += 2) {
-                if (i + di < 0|| i + di >= N || visited[i+di][j] || grid[i+di][j]) {
-                    continue;
-                }
-                visited[i+di][j] = 1;
-                insertPosition(&ll, createNewPosition(i+di, j));
-            }
+    long smallFarTopLeft = visitGrid(N-1, N-1, N - N/2 - 2);
+    long bigFarTopLeft = visitGrid(N-1, N-1, 2*N - N/2 - 2);
 
-            for (int dj = -1; dj <= 1; dj += 2) {
-                if (j + dj < 0|| j + dj >= N || visited[i][j+dj] || grid[i][j+dj]) {
-                    continue;
-                }
-                visited[i][j+dj] = 1;
-                insertPosition(&ll, createNewPosition(i, j+dj));
-            }
-            free(p);
-        }
+    long bigFarBottomLeft = visitGrid(0, N-1, 2*N - N/2 - 2);
+    long smallFarBottomLeft = visitGrid(0, N-1, N - N/2 - 2);
 
-        if (step == 64) {
-            insideGrid = ll.size;
-        }
-    }
+    long bigFarBottomRight = visitGrid(0, 0, 2*N - N/2 - 2);
+    long smallFarBottomRight = visitGrid(0, 0, N - N/2 - 2);
 
-    // printGridAndVisited(&visited[0][0], N, N);
-    fullGrid = ll.size;
-    long n = 2 * steps / N + 1;
-    long gridsEntered = n + 2 * (n * (n-1) / 2 - 2 * ((n/2) * (n/2+1) / 2));
-    solutionII = gridsEntered * fullGrid - (fullGrid - insideGrid); 
+    long n = steps / N;
+    long enteredOdd = n * n;
+    long enteredEven = (n-1) * (n-1);
 
-    printf("n = %ld, gridsEntered = %ld, fullGrid = %ld, insideGrid = %ld\n",n, gridsEntered , fullGrid, insideGrid);
+    solutionII =    enteredOdd * fullGridEven + 
+                    enteredEven * fullGridOdd +
+                    farTop +
+                    farBottom +
+                    farLeft + 
+                    farRight + 
+                    n * (smallFarTopRight + smallFarTopLeft + smallFarBottomLeft + smallFarBottomRight) + 
+                    (n-1) * (bigFarTopRight + bigFarTopLeft + bigFarBottomLeft + bigFarBottomRight);
+
     printf("The solution to part II is: %ld\n", solutionII);
 }
 
 void printGridAndVisited(int *visited, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            if (*(visited+i*cols+j)) {
+            if (i == starti && j == startj) {
+                printf("S");
+            } else if (*(visited+i*cols+j)) {
                 printf("O");
             } else if (grid[i][j]) {
                 printf("#");
@@ -238,5 +232,5 @@ void printGridAndVisited(int *visited, int rows, int cols) {
         }
         printf("\n");
     }
-    printf("\n");
+    // printf("\n");
 }
