@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N 23
-// #define N 141
+// #define N 23
+#define N 141
+
+#define MAX(a, b) (a > b ? a : b)
 
 enum Direction {
     RIGHT,
@@ -13,6 +15,7 @@ enum Direction {
 };
 
 struct Node {
+    int ind;
     int i;
     int j;
     int dist1;
@@ -53,7 +56,7 @@ int main()
 
 void openFile()
 {
-    fp = fopen("../test.txt", "r");
+    fp = fopen("../input.txt", "r");
 
     if (fp == NULL)
     {
@@ -66,9 +69,8 @@ void openFile()
     }
 }
 
-void readInput()
-{
-     for (int i = 0; i < N; i++) {
+void readInput() {
+    for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             fscanf(fp, "%1c", &grid[i][j]);
         }
@@ -78,7 +80,9 @@ void readInput()
     // detect nodes (including start and end node)
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
-            if (i == 0 && grid[i][j] == '.') {
+            if (grid[i][j] == '#') {
+                continue;
+            } else if (i == 0 && grid[i][j] == '.') {
                 grid[i][j] = 'S';
                 numOfNodes++;
                 startj = j;
@@ -90,30 +94,31 @@ void readInput()
                 break;
             }
 
-            int slopes = 0;
+            int freeNeigh = 0;
 
-            if (j+1 < N && (grid[i][j+1] == '>' || grid[i][j+1] == '<')) {
-                slopes++;
+            if (j+1 < N && grid[i][j+1] != '#') {
+                freeNeigh++;
             }
 
-            if (j-1 >= 0 && (grid[i][j-1] == '>' || grid[i][j-1] == '<')) {
-                slopes++;
+            if (j-1 >= 0 && grid[i][j-1] != '#') {
+                freeNeigh++;
             }
 
-            if (i+1 < N && (grid[i+1][j] == 'v' || grid[i+1][j] == '^')) {
-                slopes++;
+            if (i+1 < N && grid[i+1][j] != '#') {
+                freeNeigh++;
             }
 
-            if (i-1 >= 0 && (grid[i][j-1] == 'v' || grid[i-1][j] == '^')) {
-                slopes++;
+            if (i-1 >= 0 && grid[i-1][j] != '#') {
+                freeNeigh++;
             }
 
-            if (slopes >= 2) {
+            if (freeNeigh > 2) {
                 grid[i][j] = 'N';
                 numOfNodes++;
             }
         }
     }
+
     printf("Read input successfully!\n");
 }
 
@@ -155,26 +160,7 @@ void walkToNextNode(struct Node *start, enum Direction startDir, struct Node *no
         j += dj;
         d++;
 
-        // Case: Slope at (i, j)
-        if (grid[i][j] == '>') {
-            di = 0;
-            dj = 1;
-            continue;
-        } else if (grid[i][j] == 'v') {
-            di = 1;
-            dj = 0;
-            continue;
-        } else if (grid[i][j] == '<') {
-            di = 0;
-            dj = -1;
-            continue;
-        } else if (grid[i][j] == '^') {
-            di = -1;
-            dj = 0;
-            continue;
-        }
-
-        // Case: No slope at (i, j)
+        // No slope at any (i, j)
         if (j != N-1 && prevj != j+1 && grid[i][j+1] != '#') {
             di = 0;
             dj = 1;
@@ -189,7 +175,7 @@ void walkToNextNode(struct Node *start, enum Direction startDir, struct Node *no
             dj = 0;
         }
 
-    } while (grid[i][j] != 'N' && grid[i][j] != 'E');
+    } while (grid[i][j] != 'N' && grid[i][j] != 'E' && grid[i][j] != 'S');
 
     struct Node *arrival;
     for (int k = 0; k < numOfNodes; k++) {
@@ -217,6 +203,44 @@ void walkToNextNode(struct Node *start, enum Direction startDir, struct Node *no
     // printf("Arrival at (%d, %d) and dist = %d\n", arrival->i, arrival->j, d);
 }
 
+int longestPath(struct Node *startNode, int *visited) {
+    // printf("(%d, %d)\n", startNode->i, startNode->j);
+    if (startNode->isEnd) {
+        return 0;
+    } else if (startNode->isStart) {
+        visited[startNode->ind] = 1;
+        int d = startNode->dist1 + longestPath(startNode->node1, visited);
+        visited[startNode->ind] = 0;
+        return d;
+    }
+
+    visited[startNode->ind] = 1;
+
+    int d, opt1, opt2, opt3, opt4;
+    opt1 = opt2 = opt3 = opt4 = 0;
+
+    if (startNode->node1 != NULL && !visited[startNode->node1->ind]) {
+        opt1 = startNode->dist1 + longestPath(startNode->node1, visited);
+    }
+
+    if (startNode->node2 != NULL && !visited[startNode->node2->ind]) {
+        opt2 = startNode->dist2 + longestPath(startNode->node2, visited);
+    }
+
+    if (startNode->node3 != NULL && !visited[startNode->node3->ind]) {
+        opt3 = startNode->dist3 + longestPath(startNode->node3, visited);
+    }
+
+    if (startNode->node4 != NULL && !visited[startNode->node4->ind]) {
+        opt4 = startNode->dist4 + longestPath(startNode->node4, visited);
+    }
+
+    d = MAX(MAX(opt1, opt2), MAX(opt3, opt4));
+
+    visited[startNode->ind] = 0;
+    return d;
+}
+
 void solvePartII()
 {
     int solutionII = 0;
@@ -225,11 +249,13 @@ void solvePartII()
     memset(nodes, 0, sizeof(struct Node) * numOfNodes);
 
     // start node
+    nodes[0].ind = 0;
     nodes[0].isStart = 1;
     nodes[0].i = 0;
     nodes[0].j = startj;
 
     // end node
+    nodes[numOfNodes-1].ind = numOfNodes-1;
     nodes[numOfNodes-1].isEnd = 1;
     nodes[numOfNodes-1].i = N-1;
     nodes[numOfNodes-1].j = endj;
@@ -241,15 +267,13 @@ void solvePartII()
             if (grid[i][j] == 'N') {
                 nodes[nodeInd].i = i;
                 nodes[nodeInd].j = j;
+                nodes[nodeInd].ind = nodeInd;
                 nodeInd++;
             }
         }
     }
 
-    // calculate distance between the nodes
-    walkToNextNode(&nodes[0], DOWN, nodes);
-
-    for (int k = 1; k < numOfNodes-1; k++) {
+    for (int k = 0; k < numOfNodes; k++) {
         int i = nodes[k].i;
         int j = nodes[k].j;
 
@@ -270,11 +294,18 @@ void solvePartII()
         }
     }
 
-    printGrid();
 
+    int visited[numOfNodes];
+    memset(visited, 0, sizeof(int) * numOfNodes);
+
+    solutionII = longestPath(&nodes[0], visited);
+
+    printGrid();
     for (int i = 0; i < numOfNodes; i++) {
         printNode(&nodes[i]);
     }
+    printf("Number of nodes: %d\n", numOfNodes);
+
     printf("The solution to part II is: %d\n", solutionII);
 }
 
@@ -289,26 +320,5 @@ void printGrid() {
 }
 
 void printNode(struct Node *node) {
-    if (node->isStart) {
-        printf("START NODE at (%d, %d) and neigh1 (%d, %d) dist1 %d\n", node->i, node->j, node->node1->i, node->node1->j, node->dist1);
-        return;
-    } else if (node->isEnd) {
-        printf("END NODE at (%d, %d)\n", node->i, node->j);
-        return;
-    } 
-    printf("NODE at (%d, %d)", node->i, node->j);                                     
-    if (node->node1 != NULL) {
-        printf(" and neigh1 (%d, %d) dist1 %d", node->node1->i, node->node1->j, node->dist1);
-    }
-    if (node->node2 != NULL) {
-        printf(" and neigh2 (%d, %d) dist2 %d", node->node2->i, node->node2->j, node->dist2);
-    }
-    if (node->node3 != NULL) {
-        printf(" and neigh3 (%d, %d) dist3 %d", node->node3->i, node->node3->j, node->dist3);
-    }
-    if (node->node4 != NULL) {
-        printf(" and neigh4 (%d, %d) dist4 %d", node->node4->i, node->node4->j, node->dist4);
-    }
-    
-    printf("\n");
+    printf("(%d, %d) %d %d %d %d\n", node->i, node->j, node->dist1, node->dist2, node->dist3, node->dist4);
 }
