@@ -1,1 +1,1 @@
-bin/Day01.ml:
+bin/Day01.ml: Int64 List String
