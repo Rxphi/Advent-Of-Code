@@ -1,8 +1,0 @@
-lib: [
-  "_build/install/default/lib/AoC2024/META"
-  "_build/install/default/lib/AoC2024/dune-package"
-  "_build/install/default/lib/AoC2024/opam"
-]
-bin: [
-  "_build/install/default/bin/AoC2024"
-]

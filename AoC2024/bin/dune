@@ -1,4 +1,3 @@
-(executable
- (public_name AoC2024)
- (name Day02)
- (libraries AoC2024 core))
+(library
+ (name helper_lib)
+ (modules helper))  ; This specifies that `helper.ml` belongs to `bin`

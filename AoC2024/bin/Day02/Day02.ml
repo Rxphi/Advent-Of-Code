@@ -1,7 +1,4 @@
-let entire_file = 
-  let ch = open_in_bin "/home/raphi/Documents/Code/Advent-Of-Code/AoC2024/input/Day02.txt" in 
-  let s = really_input_string ch (in_channel_length ch) in 
-  close_in ch; s
+let entire_file = Helper_lib.Helper.read_input 2
 
 let lines = String.split_on_char '\n' entire_file
 
@@ -33,4 +30,4 @@ let partI = Int.to_string @@ List.length (List.filter isSafe records)
 let partII = Int.to_string @@ List.length (List.filter isSafe2 records)
   
 
-let () = print_endline ("AoC2024 Day01\nPartI:\t" ^ partI ^ "\nPartII:\t" ^ partII)
+let () = print_endline ("AoC2024 Day02\nPartI:\t" ^ partI ^ "\nPartII:\t" ^ partII)

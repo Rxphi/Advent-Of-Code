@@ -1,0 +1,4 @@
+(executable
+ (public_name Day02)
+ (name Day02)
+ (libraries AoC2024 core helper_lib))
