@@ -16,4 +16,5 @@ let partI = List.fold_left (fun s (e1, e2) -> Int64.add s (Int64.abs (Int64.sub 
 
 let partII = List.fold_left (fun s e1 -> Int64.add s (Int64.mul e1 (Int64.of_int @@ List.length (List.filter (fun e2 -> e2 = e1) list2)))) 0L list1
   
+
 let () = print_endline ("AoC2024 Day01\nPartI:\t" ^ (Int64.to_string partI) ^ "\nPartII:\t" ^ (Int64.to_string partII))
