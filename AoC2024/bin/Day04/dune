@@ -1,4 +1,4 @@
 (executable
  (public_name Day04)
  (name Day04)
- (libraries AoC2024 core helper_lib))
+ (libraries helper_lib))
