@@ -24,3 +24,18 @@ let g = List.fold_left (fun g new_n -> G.add_vertex g new_n) G.empty all_nodes
 let g = List.fold_left (fun g (src,dst) -> G.add_edge g src dst) g constraints
 
 let _ = G.iter_edges (fun src dst -> print_endline @@ Int.to_string src ^ "->" ^ Int.to_string dst) g
+
+let reachable g src dst = 
+  let frontier = ref [src] in 
+  let found = ref false in 
+  while !frontier <> [] do 
+    let curr = List.hd !frontier in 
+    if curr = dst then 
+      found := true 
+    else 
+      begin
+      let neighbours = Graph.Oper.Neighbourhood(G).list_from_vertex g curr in 
+      false
+    end
+  done;
+  !found
